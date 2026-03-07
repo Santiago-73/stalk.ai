@@ -39,6 +39,17 @@ interface RSSItem {
     link?: string | { '@_href'?: string }
 }
 
+function decodeEntities(text: string): string {
+    return text
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&#32;/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+}
+
 async function fetchRSS(url: string): Promise<string> {
     const res = await fetch(url, {
         headers: {
@@ -59,7 +70,7 @@ async function fetchRSS(url: string): Promise<string> {
     const top = items.slice(0, 8)
     return top
         .map((item) => {
-            const title = item.title ?? ''
+            const title = decodeEntities(item.title ?? '')
 
             // Extract description, handling potential objects from fast-xml-parser
             let rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
@@ -67,8 +78,11 @@ async function fetchRSS(url: string): Promise<string> {
                 rawDesc = (rawDesc as any)['#text'] ?? (rawDesc as any)._text ?? JSON.stringify(rawDesc)
             }
 
-            // Strip HTML tags and clean up
-            const clean = String(rawDesc).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400)
+            // Strip HTML tags, decode entities, and clean up
+            const clean = decodeEntities(String(rawDesc).replace(/<[^>]*>/g, ''))
+                .replace(/\s+/g, ' ')
+                .trim()
+                .slice(0, 400)
             return `• ${title}: ${clean}`
         })
         .join('\n')
@@ -155,12 +169,17 @@ export async function POST(req: NextRequest) {
             .single()
 
         const userPlan = profile?.plan ?? 'free'
+        console.log(`[Digest] User: ${user.id}, Plan: ${userPlan}`)
 
         // 2. Select appropriate Gemini API key
-        // Priority: PAÍD key for pro/ultra, falling back to basic key.
+        const hasPaidKey = !!process.env.GOOGLE_GEMINI_API_KEY_PAID
+        const hasFreeKey = !!process.env.GOOGLE_GEMINI_API_KEY_FREE
+
         const apiKey = (userPlan === 'pro' || userPlan === 'ultra')
             ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
             : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
+
+        console.log(`[Digest] Keys - Paid set: ${hasPaidKey}, Free set: ${hasFreeKey}, Using fallback: ${!process.env.GOOGLE_GEMINI_API_KEY_PAID && (userPlan === 'pro' || userPlan === 'ultra')}`)
 
         // Generate digest with Gemini, fall back to rule-based if quota exceeded
         const prompt = `You are a concise content summarizer. Given the following recent posts/items from "${source.name}", write a tight digest of exactly 4–5 bullet points (use • character) in the SAME language as the content. Focus on the most interesting or important items. Be informative but brief. No intro sentence, just bullets.\n\nContent:\n${rawContent}`
