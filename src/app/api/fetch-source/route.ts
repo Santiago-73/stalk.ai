@@ -4,9 +4,7 @@ import { XMLParser } from 'fast-xml-parser'
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
 
-async function geminiGenerate(prompt: string): Promise<string> {
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY
-    if (!apiKey) throw new Error('GOOGLE_GEMINI_API_KEY not set')
+async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
         {
@@ -149,13 +147,30 @@ export async function POST(req: NextRequest) {
 
         if (!rawContent) return NextResponse.json({ error: 'No content fetched' }, { status: 422 })
 
+        // 1. Get user profile to check plan
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('plan')
+            .eq('id', user.id)
+            .single()
+
+        const userPlan = profile?.plan ?? 'free'
+
+        // 2. Select appropriate Gemini API key
+        // Priority: PAÍD key for pro/ultra, falling back to basic key.
+        const apiKey = (userPlan === 'pro' || userPlan === 'ultra')
+            ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
+            : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
+
         // Generate digest with Gemini, fall back to rule-based if quota exceeded
         const prompt = `You are a concise content summarizer. Given the following recent posts/items from "${source.name}", write a tight digest of exactly 4–5 bullet points (use • character) in the SAME language as the content. Focus on the most interesting or important items. Be informative but brief. No intro sentence, just bullets.\n\nContent:\n${rawContent}`
         let digest: string
         let geminiUsed = true
         try {
-            digest = await geminiGenerate(prompt)
-        } catch {
+            if (!apiKey) throw new Error('No Gemini API key available')
+            digest = await geminiGenerate(prompt, apiKey)
+        } catch (err) {
+            console.error('[Gemini Error]', err)
             geminiUsed = false
             digest = fallbackDigest(rawContent, source.name)
         }
