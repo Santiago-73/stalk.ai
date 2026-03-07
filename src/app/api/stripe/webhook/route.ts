@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
             await supabaseAdmin.from('subscriptions').update({
                 status,
-                current_period_end: new Date(sub.current_period_end * 1000).toISOString()
+                current_period_end: new Date((sub as any).current_period_end * 1000).toISOString()
             }).eq('stripe_subscription_id', sub.id)
 
             // Update profile plan
