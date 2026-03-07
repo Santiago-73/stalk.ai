@@ -43,7 +43,10 @@ interface RSSItem {
 
 async function fetchRSS(url: string): Promise<string> {
     const res = await fetch(url, {
-        headers: { 'User-Agent': 'Stalk.ai/1.0 (RSS reader)' },
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'application/xml, text/xml, */*'
+        },
         signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -78,33 +81,14 @@ async function fetchReddit(url: string): Promise<string> {
         throw new Error('Reddit search URLs are not supported. Use a subreddit URL like reddit.com/r/ROS2')
     }
 
-    // Extract subreddit from URL and build clean API URL
+    // Extract subreddit from URL
     const subMatch = url.match(/reddit\.com\/r\/([A-Za-z0-9_]+)/)
     if (!subMatch) throw new Error('Could not extract subreddit from URL. Use format: reddit.com/r/SUBREDDIT')
     const subreddit = subMatch[1]
 
-    const jsonUrl = `https://www.reddit.com/r/${subreddit}/hot.json`
-    const res = await fetch(`${jsonUrl}?limit=10`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Stalkbot/1.0)' },
-        signal: AbortSignal.timeout(10000),
-    })
-    if (!res.ok) throw new Error(`Reddit returned HTTP ${res.status}`)
-
-    const text = await res.text()
-    if (text.trim().startsWith('<')) {
-        throw new Error('Reddit blocked the request (returned HTML). Try again in a moment.')
-    }
-
-    const json = JSON.parse(text)
-    const posts = json?.data?.children ?? []
-    return posts
-        .slice(0, 8)
-        .map((p: { data: { title: string; selftext?: string; score?: number } }) => {
-            const { title, selftext, score } = p.data
-            const text = (selftext ?? '').slice(0, 300).replace(/\s+/g, ' ')
-            return `• [${score} pts] ${title}${text ? ': ' + text : ''}`
-        })
-        .join('\n')
+    // Use RSS endpoint which is often more stable and less prone to 403 than the JSON one
+    const rssUrl = `https://www.reddit.com/r/${subreddit}/.rss`
+    return fetchRSS(rssUrl)
 }
 
 async function fetchYouTube(url: string): Promise<string> {
