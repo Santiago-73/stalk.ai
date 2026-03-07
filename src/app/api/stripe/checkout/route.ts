@@ -19,15 +19,23 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id)
         .single()
 
-    const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        customer: profile?.stripe_customer_id || undefined,
-        customer_email: !profile?.stripe_customer_id ? user.email : undefined,
-        line_items: [{ price: PLANS[plan].priceId!, quantity: 1 }],
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
-        metadata: { userId: user.id, plan },
-    })
+    try {
+        const session = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            customer: profile?.stripe_customer_id || undefined,
+            customer_email: !profile?.stripe_customer_id ? user.email : undefined,
+            line_items: [{ price: PLANS[plan].priceId!, quantity: 1 }],
+            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true`,
+            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
+            metadata: { userId: user.id, plan },
+        })
 
-    return NextResponse.redirect(session.url!)
+        return NextResponse.redirect(session.url!)
+    } catch (error: any) {
+        console.error('Stripe Checkout Error:', error)
+        return NextResponse.json(
+            { error: 'Internal Server Error', message: error.message },
+            { status: 500 }
+        )
+    }
 }
