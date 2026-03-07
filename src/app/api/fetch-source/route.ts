@@ -62,14 +62,15 @@ async function fetchRSS(url: string): Promise<string> {
     return top
         .map((item) => {
             const title = item.title ?? ''
-            const desc =
-                item.description ??
-                item.summary ??
-                item.content ??
-                item['media:group']?.['media:description'] ??
-                ''
-            // Strip HTML tags
-            const clean = String(desc).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400)
+
+            // Extract description, handling potential objects from fast-xml-parser
+            let rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
+            if (typeof rawDesc === 'object' && rawDesc !== null) {
+                rawDesc = (rawDesc as any)['#text'] ?? (rawDesc as any)._text ?? JSON.stringify(rawDesc)
+            }
+
+            // Strip HTML tags and clean up
+            const clean = String(rawDesc).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 400)
             return `• ${title}: ${clean}`
         })
         .join('\n')
