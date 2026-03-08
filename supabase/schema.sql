@@ -28,7 +28,7 @@ create table if not exists sources (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references profiles(id) on delete cascade not null,
   name text not null,
-  type text not null check (type in ('youtube', 'reddit', 'rss')),
+  type text not null check (type in ('youtube', 'reddit', 'rss', 'twitter', 'bluesky', 'hackernews')),
   url text not null,
   created_at timestamptz default now()
 );
