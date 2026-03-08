@@ -4,9 +4,11 @@ import { XMLParser } from 'fast-xml-parser'
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
 
-async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
+async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean = false): Promise<string> {
+    // Use better model for paid accounts
+    const model = isPaid ? 'gemini-1.5-pro' : 'gemini-2.0-flash-lite'
     const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -16,6 +18,7 @@ async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
     )
     if (!res.ok) {
         const body = await res.text()
+        console.error(`[Gemini] Model: ${model}, Status: ${res.status}, Response: ${body}`)
         const err = new Error(`Gemini API error ${res.status}: ${body}`) as Error & { status: number }
         err.status = res.status
         throw err
@@ -179,7 +182,9 @@ export async function POST(req: NextRequest) {
             ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
             : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
 
-        console.log(`[Digest] Keys - Paid set: ${hasPaidKey}, Free set: ${hasFreeKey}, Using fallback: ${!process.env.GOOGLE_GEMINI_API_KEY_PAID && (userPlan === 'pro' || userPlan === 'ultra')}`)
+        const isPaidUser = userPlan === 'pro' || userPlan === 'ultra'
+
+        console.log(`[Digest] Keys - Paid set: ${hasPaidKey}, Free set: ${hasFreeKey}, Using paid key: ${isPaidUser}`)
 
         // Generate digest with Gemini, fall back to rule-based if quota exceeded
         const prompt = `You are a concise content summarizer. Given the following recent posts/items from "${source.name}", write a tight digest of exactly 4–5 bullet points (use • character) in the SAME language as the content. Focus on the most interesting or important items. Be informative but brief. No intro sentence, just bullets.\n\nContent:\n${rawContent}`
@@ -187,9 +192,9 @@ export async function POST(req: NextRequest) {
         let geminiUsed = true
         try {
             if (!apiKey) throw new Error('No Gemini API key available')
-            digest = await geminiGenerate(prompt, apiKey)
+            digest = await geminiGenerate(prompt, apiKey, isPaidUser)
         } catch (err) {
-            console.error('[Gemini Error]', err)
+            console.error('[Gemini Error] Full error:', err)
             geminiUsed = false
             digest = fallbackDigest(rawContent, source.name)
         }
