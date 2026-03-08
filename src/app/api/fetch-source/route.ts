@@ -269,7 +269,7 @@ async function fetchHackerNews(url: string): Promise<string> {
 
         // Fetch story details (limit to 8 to avoid too many requests)
         const stories = await Promise.all(
-            storyIds.slice(0, 8).map(id =>
+            storyIds.slice(0, 8).map((id: number) =>
                 fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { signal: AbortSignal.timeout(5000) })
                     .then(r => r.json())
                     .catch(() => null)
