@@ -194,6 +194,105 @@ async function fetchTwitter(url: string): Promise<string> {
     }
 }
 
+async function fetchBluesky(url: string): Promise<string> {
+    // Extract handle from URL: bsky.app/profile/@handle or just @handle
+    const handleMatch = url.match(/(?:bsky\.app\/profile\/)?(@?[a-zA-Z0-9._-]+)/)
+    if (!handleMatch) throw new Error('Could not extract Bluesky handle. Use format: bsky.app/profile/@handle')
+    
+    let handle = handleMatch[1]
+    if (handle.startsWith('@')) handle = handle.slice(1)
+
+    try {
+        // Get actor profile
+        const profileRes = await fetch(
+            `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${handle}`,
+            { signal: AbortSignal.timeout(10000) }
+        )
+
+        if (!profileRes.ok) throw new Error('Bluesky handle not found')
+        const profile = await profileRes.json()
+        const did = profile?.did
+        if (!did) throw new Error('Could not find Bluesky user DID')
+
+        // Get latest posts from feed
+        const feedRes = await fetch(
+            `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}&limit=10`,
+            { signal: AbortSignal.timeout(10000) }
+        )
+
+        if (!feedRes.ok) throw new Error('Failed to fetch Bluesky posts')
+
+        const feedData = await feedRes.json()
+        const posts = feedData?.feed || []
+
+        if (posts.length === 0) throw new Error('No posts found')
+
+        return posts
+            .slice(0, 8)
+            .map((item: any) => {
+                const text = item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 300) || 'Post'
+                const likes = item.post?.likeCount || 0
+                const replies = item.post?.replyCount || 0
+                return `• ${text} [❤️ ${likes} | 💬 ${replies}]`
+            })
+            .join('\n')
+    } catch (err) {
+        console.error('[Bluesky Fetch Error]', err)
+        throw err
+    }
+}
+
+async function fetchHackerNews(url: string): Promise<string> {
+    // Extract section from URL or default to top stories
+    const sectionMatch = url.match(/news\.ycombinator\.com\/(top|new|best|ask|show|job)/)
+    const section = sectionMatch ? sectionMatch[1] : 'top'
+
+    try {
+        // Get story IDs
+        const endpoint = section === 'top' 
+            ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
+            : section === 'new'
+            ? 'https://hacker-news.firebaseio.com/v0/newstories.json'
+            : section === 'best'
+            ? 'https://hacker-news.firebaseio.com/v0/beststories.json'
+            : section === 'ask'
+            ? 'https://hacker-news.firebaseio.com/v0/askstories.json'
+            : section === 'show'
+            ? 'https://hacker-news.firebaseio.com/v0/showstories.json'
+            : 'https://hacker-news.firebaseio.com/v0/jobstories.json'
+
+        const idsRes = await fetch(endpoint, { signal: AbortSignal.timeout(10000) })
+        if (!idsRes.ok) throw new Error('Failed to fetch HN story IDs')
+
+        const storyIds = (await idsRes.json()).slice(0, 10)
+        if (storyIds.length === 0) throw new Error('No stories found')
+
+        // Fetch story details (limit to 8 to avoid too many requests)
+        const stories = await Promise.all(
+            storyIds.slice(0, 8).map(id =>
+                fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { signal: AbortSignal.timeout(5000) })
+                    .then(r => r.json())
+                    .catch(() => null)
+            )
+        )
+
+        const validStories = stories.filter(Boolean)
+        if (validStories.length === 0) throw new Error('Could not fetch story details')
+
+        return validStories
+            .map(story => {
+                const title = story.title?.slice(0, 150) || 'Story'
+                const points = story.score || 0
+                const comments = story.descendants || 0
+                return `• ${title} [⬆️ ${points} points | 💬 ${comments}]`
+            })
+            .join('\n')
+    } catch (err) {
+        console.error('[HN Fetch Error]', err)
+        throw err
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { source_id } = await req.json()
@@ -221,6 +320,10 @@ export async function POST(req: NextRequest) {
             rawContent = await fetchYouTube(source.url)
         } else if (source.type === 'twitter') {
             rawContent = await fetchTwitter(source.url)
+        } else if (source.type === 'bluesky') {
+            rawContent = await fetchBluesky(source.url)
+        } else if (source.type === 'hackernews') {
+            rawContent = await fetchHackerNews(source.url)
         } else {
             rawContent = await fetchRSS(source.url)
         }

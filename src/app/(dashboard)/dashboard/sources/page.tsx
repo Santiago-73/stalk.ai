@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Youtube, MessageSquare, Rss, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Twitter } from 'lucide-react'
+import { Plus, Youtube, MessageSquare, Rss, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Twitter, TrendingUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter'
+type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews'
 
 interface Source {
     id: string
@@ -31,6 +31,18 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
         color: '#1da9f0',
         label: 'Twitter/X',
         placeholder: 'https://twitter.com/@username'
+    },
+    bluesky: {
+        icon: <MessageSquare size={16} />,
+        color: '#1690ff',
+        label: 'Bluesky',
+        placeholder: 'https://bsky.app/profile/@username'
+    },
+    hackernews: {
+        icon: <TrendingUp size={16} />,
+        color: '#ff6600',
+        label: 'Hacker News',
+        placeholder: 'https://news.ycombinator.com/top'
     },
     rss: {
         icon: <Rss size={16} />,
