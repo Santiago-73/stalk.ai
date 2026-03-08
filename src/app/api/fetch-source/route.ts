@@ -140,7 +140,7 @@ async function fetchTwitter(url: string): Promise<string> {
     // Extract @handle from various URL formats
     const handleMatch = url.match(/twitter\.com\/(@?[A-Za-z0-9_]+)/)
     if (!handleMatch) throw new Error('Could not extract Twitter handle from URL. Use format: twitter.com/@handle')
-    
+
     let handle = handleMatch[1]
     if (handle.startsWith('@')) handle = handle.slice(1)
 
@@ -153,7 +153,7 @@ async function fetchTwitter(url: string): Promise<string> {
                 signal: AbortSignal.timeout(10000),
             }
         )
-        
+
         if (!userRes.ok) {
             const err = await userRes.text()
             throw new Error(`Twitter user lookup failed: ${err}`)
@@ -195,12 +195,14 @@ async function fetchTwitter(url: string): Promise<string> {
 }
 
 async function fetchBluesky(url: string): Promise<string> {
-    // Extract handle from URL: bsky.app/profile/@handle or just @handle
-    const handleMatch = url.match(/(?:bsky\.app\/profile\/)?(@?[a-zA-Z0-9._-]+)/)
-    if (!handleMatch) throw new Error('Could not extract Bluesky handle. Use format: bsky.app/profile/@handle')
-    
-    let handle = handleMatch[1]
-    if (handle.startsWith('@')) handle = handle.slice(1)
+    const match = url.match(/bsky\.app\/profile\/([^/?#]+)/)
+    if (!match) throw new Error('Invalid Bluesky profile URL. Use format: bsky.app/profile/username')
+    let handle = match[1]
+
+    // Auto-append .bsky.social if the user just put their short handle (no dots)
+    if (!handle.includes('.')) {
+        handle += '.bsky.social'
+    }
 
     try {
         // Get actor profile
@@ -209,7 +211,7 @@ async function fetchBluesky(url: string): Promise<string> {
             { signal: AbortSignal.timeout(10000) }
         )
 
-        if (!profileRes.ok) throw new Error('Bluesky handle not found')
+        if (!profileRes.ok) throw new Error(`Bluesky handle "${handle}" not found`)
         const profile = await profileRes.json()
         const did = profile?.did
         if (!did) throw new Error('Could not find Bluesky user DID')
@@ -249,17 +251,17 @@ async function fetchHackerNews(url: string): Promise<string> {
 
     try {
         // Get story IDs
-        const endpoint = section === 'top' 
+        const endpoint = section === 'top'
             ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
             : section === 'new'
-            ? 'https://hacker-news.firebaseio.com/v0/newstories.json'
-            : section === 'best'
-            ? 'https://hacker-news.firebaseio.com/v0/beststories.json'
-            : section === 'ask'
-            ? 'https://hacker-news.firebaseio.com/v0/askstories.json'
-            : section === 'show'
-            ? 'https://hacker-news.firebaseio.com/v0/showstories.json'
-            : 'https://hacker-news.firebaseio.com/v0/jobstories.json'
+                ? 'https://hacker-news.firebaseio.com/v0/newstories.json'
+                : section === 'best'
+                    ? 'https://hacker-news.firebaseio.com/v0/beststories.json'
+                    : section === 'ask'
+                        ? 'https://hacker-news.firebaseio.com/v0/askstories.json'
+                        : section === 'show'
+                            ? 'https://hacker-news.firebaseio.com/v0/showstories.json'
+                            : 'https://hacker-news.firebaseio.com/v0/jobstories.json'
 
         const idsRes = await fetch(endpoint, { signal: AbortSignal.timeout(10000) })
         if (!idsRes.ok) throw new Error('Failed to fetch HN story IDs')

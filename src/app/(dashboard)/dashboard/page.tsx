@@ -5,11 +5,15 @@ import Link from 'next/link'
 const typeIcon: Record<string, React.ReactNode> = {
     youtube: <Youtube size={14} />,
     reddit: <MessageSquare size={14} />,
+    bluesky: <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: '-0.5px' }}>Bs</span>,
+    hackernews: <span style={{ fontWeight: 800, fontSize: 11, background: '#ff6600', color: '#fff', padding: '0 2px' }}>Y</span>,
     rss: <Rss size={14} />,
 }
 const typeColor: Record<string, string> = {
     youtube: '#ff4444',
     reddit: '#ff6314',
+    bluesky: '#0285FF',
+    hackernews: '#ff6600',
     rss: '#10b981',
 }
 

@@ -33,16 +33,16 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
         placeholder: 'https://twitter.com/@username'
     },
     bluesky: {
-        icon: <MessageSquare size={16} />,
-        color: '#1690ff',
+        icon: <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.5px' }}>Bs</span>,
+        color: '#0285FF',
         label: 'Bluesky',
-        placeholder: 'https://bsky.app/profile/@username'
+        placeholder: 'https://bsky.app/profile/username'
     },
     hackernews: {
-        icon: <TrendingUp size={16} />,
+        icon: <span style={{ fontWeight: 800, fontSize: 13, background: '#ff6600', color: '#fff', padding: '0 3px' }}>Y</span>,
         color: '#ff6600',
         label: 'Hacker News',
-        placeholder: 'https://news.ycombinator.com/top'
+        placeholder: 'https://news.ycombinator.com'
     },
     rss: {
         icon: <Rss size={16} />,
@@ -292,7 +292,7 @@ export default function SourcesPage() {
                             <label style={{ display: 'block', marginBottom: 10, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
                                 Source type
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
                                 {(Object.keys(typeConfig) as SourceType[]).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type

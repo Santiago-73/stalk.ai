@@ -24,8 +24,8 @@ function SourceIcon({ type }: { type: string }) {
     if (type === 'youtube') return <Youtube size={16} />
     if (type === 'reddit') return <MessageSquare size={16} />
     if (type === 'twitter') return <Twitter size={16} />
-    if (type === 'bluesky') return <MessageSquare size={16} />
-    if (type === 'hackernews') return <TrendingUp size={16} />
+    if (type === 'bluesky') return <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.5px' }}>Bs</span>
+    if (type === 'hackernews') return <span style={{ fontWeight: 800, fontSize: 13, background: '#ff6600', color: '#fff', padding: '0 2px' }}>Y</span>
     return <Rss size={16} />
 }
 
@@ -210,11 +210,11 @@ function ThumbnailGrid({ thumbnails, sourceType }: { thumbnails: Thumbnail[]; so
                     }}
                     onMouseEnter={(e) => {
                         (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
-                        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 12px 24px rgba(0,0,0,0.2)'
+                            ; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 24px rgba(0,0,0,0.2)'
                     }}
                     onMouseLeave={(e) => {
                         (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 1px var(--border)'
+                            ; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 1px var(--border)'
                     }}
                 >
                     <img
@@ -301,13 +301,13 @@ export default function DigestCard({ digest }: { digest: Digest }) {
             }}
             onMouseEnter={(e) => {
                 (e.currentTarget as HTMLElement).style.borderColor = col.color
-                ;(e.currentTarget as HTMLElement).style.boxShadow = `0 16px 32px rgba(0,0,0,0.1), inset 0 1px 0 ${col.border}`
-                ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
+                    ; (e.currentTarget as HTMLElement).style.boxShadow = `0 16px 32px rgba(0,0,0,0.1), inset 0 1px 0 ${col.border}`
+                    ; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
             }}
             onMouseLeave={(e) => {
                 (e.currentTarget as HTMLElement).style.borderColor = col.border
-                ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
-                ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                    ; (e.currentTarget as HTMLElement).style.boxShadow = 'none'
+                    ; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
             }}
         >
             {/* Top accent bar */}
