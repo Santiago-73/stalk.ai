@@ -133,6 +133,67 @@ async function fetchYouTube(url: string): Promise<string> {
     return fetchRSS(feedUrl)
 }
 
+async function fetchTwitter(url: string): Promise<string> {
+    const bearerToken = process.env.TWITTER_API_TOKEN
+    if (!bearerToken) throw new Error('Twitter API token not configured')
+
+    // Extract @handle from various URL formats
+    const handleMatch = url.match(/twitter\.com\/(@?[A-Za-z0-9_]+)/)
+    if (!handleMatch) throw new Error('Could not extract Twitter handle from URL. Use format: twitter.com/@handle')
+    
+    let handle = handleMatch[1]
+    if (handle.startsWith('@')) handle = handle.slice(1)
+
+    try {
+        // Get user ID from handle
+        const userRes = await fetch(
+            `https://api.twitter.com/2/users/by/username/${handle}?user.fields=id,name,public_metrics`,
+            {
+                headers: { Authorization: `Bearer ${bearerToken}` },
+                signal: AbortSignal.timeout(10000),
+            }
+        )
+        
+        if (!userRes.ok) {
+            const err = await userRes.text()
+            throw new Error(`Twitter user lookup failed: ${err}`)
+        }
+
+        const userData = await userRes.json()
+        const userId = userData?.data?.id
+        if (!userId) throw new Error('Could not find Twitter user')
+
+        // Get latest tweets
+        const tweetsRes = await fetch(
+            `https://api.twitter.com/2/users/${userId}/tweets?max_results=10&tweet.fields=created_at,public_metrics&expansions=author_id`,
+            {
+                headers: { Authorization: `Bearer ${bearerToken}` },
+                signal: AbortSignal.timeout(10000),
+            }
+        )
+
+        if (!tweetsRes.ok) throw new Error('Failed to fetch tweets')
+
+        const tweetsData = await tweetsRes.json()
+        const tweets = tweetsData?.data || []
+
+        if (tweets.length === 0) throw new Error('No tweets found')
+
+        return tweets
+            .slice(0, 8)
+            .map((tweet: any) => {
+                const text = tweet.text?.replace(/\n/g, ' ').slice(0, 300) || 'Tweet'
+                const likes = tweet.public_metrics?.like_count || 0
+                const retweets = tweet.public_metrics?.retweet_count || 0
+                return `• ${text} [❤️ ${likes} | 🔄 ${retweets}]`
+            })
+            .join('\n')
+    } catch (err) {
+        console.error('[Twitter Fetch Error]', err)
+        throw err
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { source_id } = await req.json()
@@ -158,6 +219,8 @@ export async function POST(req: NextRequest) {
             rawContent = await fetchReddit(source.url)
         } else if (source.type === 'youtube') {
             rawContent = await fetchYouTube(source.url)
+        } else if (source.type === 'twitter') {
+            rawContent = await fetchTwitter(source.url)
         } else {
             rawContent = await fetchRSS(source.url)
         }

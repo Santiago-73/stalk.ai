@@ -1,6 +1,6 @@
 'use client'
 
-import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, ArrowUpRight, Clock } from 'lucide-react'
+import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, ArrowUpRight, Clock, Twitter } from 'lucide-react'
 import { useState } from 'react'
 
 interface Thumbnail {
@@ -23,11 +23,13 @@ interface Digest {
 function SourceIcon({ type }: { type: string }) {
     if (type === 'youtube') return <Youtube size={16} />
     if (type === 'reddit') return <MessageSquare size={16} />
+    if (type === 'twitter') return <Twitter size={16} />
     return <Rss size={16} />
 }
 
 function sourceColor(type: string) {
     if (type === 'youtube') return { bg: 'rgba(239,68,68,0.2)', color: '#ff6b6b', border: 'rgba(255,107,107,0.4)', gradient: 'linear-gradient(135deg, #ff4757, #ff6b6b)' }
+    if (type === 'twitter') return { bg: 'rgba(29,155,240,0.2)', color: '#1da9f0', border: 'rgba(29,155,240,0.4)', gradient: 'linear-gradient(135deg, #1da9f0, #55acee)' }
     if (type === 'reddit') return { bg: 'rgba(255,145,0,0.2)', color: '#ff9100', border: 'rgba(255,145,0,0.4)', gradient: 'linear-gradient(135deg, #ff7e22, #ff9100)' }
     return { bg: 'rgba(102,117,255,0.2)', color: '#6675ff', border: 'rgba(102,117,255,0.4)', gradient: 'linear-gradient(135deg, #6675ff, #7c97ff)' }
 }
