@@ -261,6 +261,7 @@ function ThumbnailGrid({ thumbnails, sourceType }: { thumbnails: Thumbnail[]; so
             ))}
         </div>
     )
+}
 
 export default function DigestCard({ digest }: { digest: Digest }) {
     const col = sourceColor(digest.source_type)
