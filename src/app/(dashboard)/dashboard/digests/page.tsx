@@ -25,13 +25,13 @@ export default async function DigestsPage() {
         .order('created_at', { ascending: false })
 
     return (
-        <div style={{ padding: '36px 40px', maxWidth: 900 }}>
+        <div style={{ padding: '36px 40px', maxWidth: '100%', width: '100%' }}>
             {/* Header */}
-            <div style={{ marginBottom: 32 }}>
-                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800, color: 'var(--text-primary)' }}>
+            <div style={{ marginBottom: 40 }}>
+                <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>
                     Digests
                 </h1>
-                <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: 14 }}>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 15 }}>
                     Your AI-generated summaries from all tracked sources.
                 </p>
             </div>
@@ -71,12 +71,32 @@ export default async function DigestsPage() {
             )}
 
             {!error && digests && digests.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>
-                        <FileText size={13} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 13,
+                        color: 'var(--text-muted)',
+                        marginBottom: 8
+                    }}>
+                        <div style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #7c3aed, #e879f9)'
+                        }} />
+                        <FileText size={13} style={{ verticalAlign: 'middle' }} />
                         {digests.length} digest{digests.length !== 1 ? 's' : ''} total
                     </div>
-                    {digests.map(d => <DigestCard key={d.id} digest={d} />)}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
+                        gap: 24,
+                        width: '100%'
+                    }}>
+                        {digests.map(d => <DigestCard key={d.id} digest={d} />)}
+                    </div>
                 </div>
             )}
         </div>
