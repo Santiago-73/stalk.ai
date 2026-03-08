@@ -1,6 +1,6 @@
 'use client'
 
-import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, ArrowUpRight, Clock, Twitter, FileText, TrendingUp } from 'lucide-react'
+import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, ArrowUpRight, Clock, Twitter, FileText, TrendingUp, ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 
 interface Thumbnail {
@@ -275,6 +275,7 @@ export default function DigestCard({ digest }: { digest: Digest }) {
     const isYoutube = digest.source_type === 'youtube'
     const aiGenerated = isAIGenerated(digest.content)
     const thumbnails = digest.metadata?.thumbnails ?? []
+    const [isExpanded, setIsExpanded] = useState(false)
 
     const contentPreview = digest.content
         .split('\n')
@@ -285,6 +286,7 @@ export default function DigestCard({ digest }: { digest: Digest }) {
 
     return (
         <div
+            onClick={() => setIsExpanded(!isExpanded)}
             style={{
                 background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(124,58,237,0.03) 100%)',
                 border: `1px solid ${col.border}`,
@@ -296,7 +298,7 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                 overflow: 'hidden',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
-                height: '100%',
+                height: isExpanded ? 'auto' : '100%',
                 position: 'relative'
             }}
             onMouseEnter={(e) => {
@@ -384,28 +386,33 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                 )}
 
                 {/* Content preview */}
-                <div style={{
-                    fontSize: 13,
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.6,
-                    display: '-webkit-box',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 3,
-                    overflow: 'hidden',
-                    flex: 1
-                }}>
-                    {contentPreview}...
-                </div>
-
-                {/* Full content (hidden but for reference) */}
-                {(isReddit && aiGenerated) && (
-                    <div style={{ marginTop: 8, maxHeight: 200, overflow: 'auto' }}>
-                        <RedditDigestContent content={digest.content} />
+                {!isExpanded && (
+                    <div style={{
+                        fontSize: 13,
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.6,
+                        display: '-webkit-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: 3,
+                        overflow: 'hidden',
+                        flex: 1
+                    }}>
+                        {contentPreview}...
                     </div>
                 )}
-                {(!isReddit || !aiGenerated) && thumbnails.length === 0 && (
-                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--text-secondary)', maxHeight: 120, overflow: 'hidden' }}>
-                        <GenericDigestContent content={digest.content} accentColor={col.gradient} />
+
+                {/* Full content */}
+                {isExpanded && (
+                    <div style={{ marginTop: 8 }}>
+                        {(isReddit && aiGenerated) ? (
+                            <div style={{ maxHeight: 200, overflow: 'auto' }}>
+                                <RedditDigestContent content={digest.content} />
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                                <GenericDigestContent content={digest.content} accentColor={col.gradient} />
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -423,8 +430,8 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                 fontWeight: 600,
                 justifyContent: 'space-between'
             }}>
-                <span>View full digest</span>
-                <ArrowUpRight size={14} style={{ opacity: 0.6 }} />
+                <span>{isExpanded ? 'Collapse digest' : 'View full digest'}</span>
+                <ChevronDown size={14} style={{ opacity: 0.6, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} />
             </div>
         </div>
     )
