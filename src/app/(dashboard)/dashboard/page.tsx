@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Plus, Radio, FileText, TrendingUp, Eye, Youtube, MessageSquare, Rss, Clock } from 'lucide-react'
+import { Plus, Radio, FileText, TrendingUp, Zap, Youtube, MessageSquare, Rss, Clock } from 'lucide-react'
 import Link from 'next/link'
 
 const typeIcon: Record<string, React.ReactNode> = {
@@ -39,11 +39,20 @@ export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    // 1. Get profile plan
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', user?.id ?? '')
+        .single()
+
+    // 2. Get total sources
     const { count: sourcesCount } = await supabase
         .from('sources')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user?.id ?? '')
 
+    // 3. Get total digests and latest 10
     const { data: digestsRaw, count: digestsCount } = await supabase
         .from('digests')
         .select('*', { count: 'exact' })
@@ -51,13 +60,22 @@ export default async function DashboardPage() {
         .order('created_at', { ascending: false })
         .limit(10)
 
+    // 4. Get digests this week
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    const { count: digestsThisWeek } = await supabase
+        .from('digests')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user?.id ?? '')
+        .gte('created_at', oneWeekAgo.toISOString())
+
     const digests: Digest[] = (digestsRaw ?? []) as Digest[]
 
     const stats = [
         { label: 'Sources tracking', value: sourcesCount ?? 0, icon: <Radio size={20} />, color: '#7c3aed' },
-        { label: 'Digests generated', value: digestsCount ?? 0, icon: <FileText size={20} />, color: '#10b981' },
-        { label: 'Items monitored', value: (sourcesCount ?? 0) * 12, icon: <Eye size={20} />, color: '#f59e0b' },
-        { label: 'Insights this week', value: Math.floor((digestsCount ?? 0) * 3.2), icon: <TrendingUp size={20} />, color: '#e879f9' },
+        { label: 'Total digests', value: digestsCount ?? 0, icon: <FileText size={20} />, color: '#10b981' },
+        { label: 'Digests this week', value: digestsThisWeek ?? 0, icon: <TrendingUp size={20} />, color: '#f59e0b' },
+        { label: 'Current Plan', value: (profile?.plan || 'free').toUpperCase(), icon: <Zap size={20} />, color: '#e879f9' },
     ]
 
     return (
