@@ -136,7 +136,7 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
 // ── Gemini ───────────────────────────────────────────────────────────────────
 
 async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean): Promise<string> {
-    const model = isPaid ? 'gemini-1.5-pro' : 'gemini-2.0-flash-lite'
+    const model = isPaid ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite'
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
@@ -218,17 +218,29 @@ export async function POST(req: NextRequest) {
             ? `${typedSubject.name} (${typedSubject.description})`
             : typedSubject.name
 
-        const prompt = `You are an expert analyst and content curator.
+        // Get user plan before building prompt
+        const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+        const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
 
-Below is recent content collected from multiple social media channels and feeds belonging to "${subjectContext}".
+        const freePrompt = `You are an expert analyst. Below is recent content from multiple channels belonging to "${subjectContext}". Write a unified digest of the most important information about ${typedSubject.name}. Use 5–7 bullet points (• character). Be concise. Write in the same language as the majority of the content.\n\n${sourceSections}`
 
-Your task: write a unified digest of the most important and relevant information about ${typedSubject.name} based on ALL sources combined. Highlight key announcements, trends, or noteworthy moments. Use bullet points (• character), 5–7 bullets max. Be concise and insightful. Write in the same language as the majority of the content.
+        const paidPrompt = `You are an expert analyst and content curator. Below is recent content collected from multiple social media channels and feeds belonging to "${subjectContext}".
+
+Produce a rich, visually-structured intelligence digest covering ALL sources combined.
+
+STRICT FORMAT RULES — follow exactly:
+1. Open with a bold section header: **🔥 [Catchy title capturing the key theme]:**
+2. Write 5–7 bullet points, each starting with •
+3. Begin each bullet with a contextual emoji: 📈 growth/metrics, 🚨 important news, 💡 insight, 🎯 key focus, 🎬 new content/launch, 📢 announcement, 🏆 achievement
+4. Use **bold** around the most important words, names, numbers, or percentages in each bullet
+5. If any source content includes a direct URL, embed the most relevant one as [descriptive text](url)
+6. Close with: **💡 Takeaway:** [one compelling sentence synthesising the key message across all sources]
+
+Write in the SAME language as the majority of the content. Be specific — names, numbers, dates.
 
 ${sourceSections}`
 
-        // Get user plan
-        const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-        const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
+        const prompt = isPaid ? paidPrompt : freePrompt
         const apiKey = isPaid
             ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
             : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)

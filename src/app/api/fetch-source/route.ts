@@ -450,7 +450,24 @@ export async function POST(req: NextRequest) {
         console.log(`[Digest Debug] Keys - Paid set: ${hasPaidKey}, Free set: ${hasFreeKey}, Using paid key: ${isPaidUser}, Final Key starts with: ${debugKey}`)
 
         // Generate digest with Gemini, fall back to rule-based if quota exceeded
-        const prompt = `You are a concise content summarizer. Given the following recent posts/items from "${source.name}", write a tight digest of exactly 4–5 bullet points (use • character) in the SAME language as the content. Focus on the most interesting or important items. Be informative but brief. No intro sentence, just bullets.\n\nContent:\n${rawContent}`
+        const freePrompt = `You are a concise content summarizer. Given the following recent posts/items from "${source.name}", write a tight digest of exactly 4–5 bullet points (use • character) in the SAME language as the content. Focus on the most interesting or important items. Be informative but brief. No intro sentence, just bullets.\n\nContent:\n${rawContent}`
+
+        const paidPrompt = `You are an expert analyst and content curator. Analyze the following recent content from "${source.name}" and produce a rich, visually-structured intelligence digest.
+
+STRICT FORMAT RULES — follow exactly:
+1. Open with a bold section header using an emoji: **🔥 [Catchy descriptive title]:**
+2. Write 5–7 bullet points, each starting with •
+3. Begin each bullet with a contextual emoji: 📈 growth/metrics, 🚨 important news, 💡 insight, 🎯 key focus, 🎬 new content/launch, 📢 announcement, 🏆 achievement
+4. Use **bold** around the most important words, names, numbers, or percentages in each bullet
+5. If the content includes a direct URL, embed the most relevant one as [descriptive text](url) in the relevant bullet
+6. Close with a styled takeaway: **💡 Takeaway:** [one compelling sentence synthesising the key message]
+
+Write in the SAME language as the content. Use specific names, numbers, and dates. No intro sentences.
+
+Content:
+${rawContent}`
+
+        const prompt = isPaidUser ? paidPrompt : freePrompt
         let digest: string
         let geminiUsed = true
         try {

@@ -1,6 +1,6 @@
 'use client'
 
-import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, ArrowUpRight, Clock, Twitter, FileText, TrendingUp, ChevronDown } from 'lucide-react'
+import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, Clock, Twitter, ChevronDown, Zap } from 'lucide-react'
 import { useState } from 'react'
 
 interface Thumbnail {
@@ -35,6 +35,7 @@ function sourceColor(type: string) {
     if (type === 'bluesky') return { bg: 'rgba(26,144,255,0.2)', color: '#1690ff', border: 'rgba(26,144,255,0.4)', gradient: 'linear-gradient(135deg, #1690ff, #5ba3ff)' }
     if (type === 'hackernews') return { bg: 'rgba(255,102,0,0.2)', color: '#ff6600', border: 'rgba(255,102,0,0.4)', gradient: 'linear-gradient(135deg, #ff6600, #ff8533)' }
     if (type === 'reddit') return { bg: 'rgba(255,145,0,0.2)', color: '#ff9100', border: 'rgba(255,145,0,0.4)', gradient: 'linear-gradient(135deg, #ff7e22, #ff9100)' }
+    if (type === 'subject') return { bg: 'rgba(124,58,237,0.2)', color: '#a78bfa', border: 'rgba(124,58,237,0.4)', gradient: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }
     return { bg: 'rgba(102,117,255,0.2)', color: '#6675ff', border: 'rgba(102,117,255,0.4)', gradient: 'linear-gradient(135deg, #6675ff, #7c97ff)' }
 }
 
@@ -48,134 +49,120 @@ function formatRelative(dateStr: string) {
     return `${Math.floor(hrs / 24)}d ago`
 }
 
-/** Detect if content is AI-generated Reddit format (has headers with emojis) */
-function isAIGenerated(content: string) {
-    return content.includes('**🔥') || content.includes('**📌') || content.includes('**💡') ||
+function isRichFormat(content: string): boolean {
+    const hasHeader = content.includes('**🔥') || content.includes('**📈') || content.includes('**🚨') ||
+        content.includes('**🎯') || content.includes('**📢') || content.includes('**🎬') || content.includes('**🏆')
+    const hasTakeaway = content.includes('**💡 Takeaway') || content.includes('💡 Takeaway')
+    return hasHeader && hasTakeaway
+}
+
+function isAIGenerated(content: string): boolean {
+    return isRichFormat(content) ||
+        content.includes('**📌') || content.includes('**💡') ||
         (content.includes('•') && !content.startsWith('•'))
 }
 
-/** Reddit AI digest renderer — parses bold section headers + bullets */
-function RedditDigestContent({ content }: { content: string }) {
-    const lines = content.split('\n')
-    const sections: { header: string | null; items: string[] }[] = []
-    let current: { header: string | null; items: string[] } = { header: null, items: [] }
-
-    for (const line of lines) {
-        const trimmed = line.trim()
-        if (!trimmed) continue
-
-        // Bold section header: **emoji text:**
-        if (/^\*\*[^*].+\*\*/.test(trimmed)) {
-            if (current.items.length > 0 || current.header !== null) {
-                sections.push(current)
-            }
-            current = { header: trimmed.replace(/\*\*/g, '').trim(), items: [] }
-        } else if (trimmed.startsWith('•')) {
-            current.items.push(trimmed.replace(/^•\s*/, ''))
-        } else {
-            // Paragraph text (highlight text, conclusion, etc.)
-            current.items.push(trimmed)
+/** Parse **bold** and [text](url) inline markdown into React nodes */
+function parseInline(text: string, linkColor: string): React.ReactNode {
+    const parts: React.ReactNode[] = []
+    const regex = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g
+    let last = 0, m, k = 0
+    while ((m = regex.exec(text)) !== null) {
+        if (m.index > last) parts.push(text.slice(last, m.index))
+        if (m[1] !== undefined) {
+            parts.push(
+                <strong key={k++} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{m[1]}</strong>
+            )
+        } else if (m[2] && m[3]) {
+            parts.push(
+                <a key={k++} href={m[3]} target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                        color: linkColor, textDecoration: 'none',
+                        borderBottom: `1px solid ${linkColor}60`,
+                        fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3
+                    }}
+                >
+                    {m[2]}<ExternalLink size={10} />
+                </a>
+            )
         }
+        last = regex.lastIndex
     }
-    if (current.items.length > 0 || current.header !== null) sections.push(current)
+    if (last < text.length) parts.push(text.slice(last))
+    return <>{parts}</>
+}
 
-    if (sections.length === 0) {
-        return <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{content}</p>
-    }
+/** Unified digest content renderer — handles plain bullets, rich Pro format, and legacy sections */
+function DigestContent({ content, accentColor }: { content: string; accentColor: string }) {
+    const linkColor = '#a78bfa'
+    const lines = content.split('\n').filter(l => l.trim())
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {sections.map((section, i) => (
-                <div key={i}>
-                    {section.header && (
-                        <p style={{
-                            margin: '0 0 8px',
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                            letterSpacing: '0.01em',
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {lines.map((line, i) => {
+                const t = line.trim()
+
+                // Takeaway block
+                if (t.startsWith('**💡 Takeaway') || t.startsWith('💡 Takeaway')) {
+                    const text = t
+                        .replace(/^\*\*💡 Takeaway\*\*:?\s*/, '')
+                        .replace(/^💡 Takeaway:?\s*/, '')
+                    return (
+                        <div key={i} style={{
+                            background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.25)',
+                            borderRadius: 10, padding: '10px 14px', marginTop: 6,
+                            fontSize: 13, lineHeight: 1.65
                         }}>
-                            {section.header}
-                        </p>
-                    )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {section.items.map((item, j) => {
-                            const dashIdx = item.indexOf(' — ')
-                            if (dashIdx !== -1 && section.header?.includes('📌')) {
-                                const title = item.slice(0, dashIdx)
-                                const explanation = item.slice(dashIdx + 3)
-                                return (
-                                    <div key={j} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                        <span style={{
-                                            width: 6, height: 6, borderRadius: '50%', marginTop: 7, flexShrink: 0,
-                                            background: 'linear-gradient(135deg, #f97316, #fb923c)'
-                                        }} />
-                                        <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
-                                            <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{title}</strong>
-                                            {' — '}{explanation}
-                                        </span>
-                                    </div>
-                                )
-                            }
-                            // Is it a bullet or a plain text (conclusion, highlight)?
-                            const isBullet = section.header?.includes('📌')
-                            return (
-                                <div key={j} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                    {isBullet && (
-                                        <span style={{
-                                            width: 6, height: 6, borderRadius: '50%', marginTop: 7, flexShrink: 0,
-                                            background: 'linear-gradient(135deg, #f97316, #fb923c)'
-                                        }} />
-                                    )}
-                                    <span style={{
-                                        fontSize: 14,
-                                        color: section.header?.includes('🔥') || section.header?.includes('💡')
-                                            ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                        lineHeight: 1.65,
-                                        fontStyle: section.header?.includes('💡') ? 'italic' : 'normal',
-                                    }}>{item}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-            ))}
+                            <span style={{ fontWeight: 700, color: linkColor }}>💡 Takeaway: </span>
+                            <span style={{ color: 'var(--text-secondary)' }}>{parseInline(text, linkColor)}</span>
+                        </div>
+                    )
+                }
+
+                // Section header: **emoji text:** or **emoji text**
+                if (/^\*\*[^*]/.test(t) && /\*\*:?$/.test(t)) {
+                    const header = t.replace(/^\*\*/, '').replace(/\*\*:?$/, '').replace(/:$/, '').trim()
+                    return (
+                        <div key={i} style={{
+                            fontSize: 12, fontWeight: 800, color: 'var(--text-muted)',
+                            textTransform: 'uppercase', letterSpacing: '0.06em',
+                            borderBottom: '1px solid var(--border)', paddingBottom: 6,
+                            marginTop: i > 0 ? 6 : 0
+                        }}>
+                            {header}
+                        </div>
+                    )
+                }
+
+                // Bullet point
+                if (t.startsWith('•') || t.startsWith('-')) {
+                    const text = t.replace(/^[•\-]\s*/, '')
+                    return (
+                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <div style={{
+                                width: 5, height: 5, borderRadius: '50%', marginTop: 9, flexShrink: 0,
+                                background: accentColor
+                            }} />
+                            <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                                {parseInline(text, linkColor)}
+                            </span>
+                        </div>
+                    )
+                }
+
+                // Plain text / paragraph
+                return (
+                    <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        {parseInline(t, linkColor)}
+                    </p>
+                )
+            })}
         </div>
     )
 }
 
-/** Fallback for non-AI content — bullet list */
-function GenericDigestContent({ content, accentColor }: { content: string; accentColor: string }) {
-    const bullets = content
-        .split('\n')
-        .filter(l => l.trim().startsWith('•') || l.trim().startsWith('-'))
-        .map(l => l.replace(/^[-•]\s*/, '').trim())
-        .filter(Boolean)
-
-    if (bullets.length > 0) {
-        return (
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {bullets.map((b, i) => (
-                    <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                        <span style={{
-                            width: 6, height: 6, borderRadius: '50%', marginTop: 7, flexShrink: 0,
-                            background: accentColor
-                        }} />
-                        <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{b}</span>
-                    </li>
-                ))}
-            </ul>
-        )
-    }
-
-    return (
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            {content}
-        </p>
-    )
-}
-
-/** Enhanced Thumbnail grid for all source types */
+/** Thumbnail grid — shown for paid plans */
 function ThumbnailGrid({ thumbnails, sourceType }: { thumbnails: Thumbnail[]; sourceType: string }) {
     const [failedUrls, setFailedUrls] = useState<Set<string>>(new Set())
     const visible = thumbnails.filter(t => !failedUrls.has(t.thumb)).slice(0, 3)
@@ -186,79 +173,46 @@ function ThumbnailGrid({ thumbnails, sourceType }: { thumbnails: Thumbnail[]; so
 
     return (
         <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            gap: isCompact ? 8 : 12,
-            marginTop: 12,
-            marginBottom: 12,
+            display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: isCompact ? 8 : 12, marginTop: 12, marginBottom: 12,
         }}>
             {visible.map((t, i) => (
-                <a
-                    key={i}
-                    href={t.permalink}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <a key={i} href={t.permalink} target="_blank" rel="noopener noreferrer"
                     style={{
-                        position: 'relative',
-                        display: 'block',
-                        borderRadius: 12,
-                        overflow: 'hidden',
-                        textDecoration: 'none',
+                        position: 'relative', display: 'block', borderRadius: 12,
+                        overflow: 'hidden', textDecoration: 'none',
                         aspectRatio: sourceType === 'reddit' ? '4/3' : '16/9',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer'
+                        transition: 'all 0.3s ease', cursor: 'pointer'
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={e => {
                         (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
-                            ; (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 24px rgba(0,0,0,0.2)'
+                        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 12px 24px rgba(0,0,0,0.2)'
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                         (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                            ; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 1px var(--border)'
+                        ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 1px var(--border)'
                     }}
                 >
-                    <img
-                        src={t.thumb}
-                        alt={t.title}
+                    <img src={t.thumb} alt={t.title}
                         onError={() => setFailedUrls(prev => new Set(prev).add(t.thumb))}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            display: 'block',
-                            border: '1px solid var(--border)',
-                            borderRadius: 12,
-                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', border: '1px solid var(--border)', borderRadius: 12 }}
                     />
-                    {/* Overlay */}
                     <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: 12,
+                        position: 'absolute', inset: 0, borderRadius: 12,
                         background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 70%)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-end',
-                        padding: '12px',
-                        gap: 8,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+                        padding: '12px', gap: 8,
                     }}>
                         <span style={{
-                            fontSize: 12,
-                            color: '#fff',
-                            fontWeight: 600,
-                            lineHeight: 1.4,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 2
+                            fontSize: 12, color: '#fff', fontWeight: 600, lineHeight: 1.4,
+                            overflow: 'hidden', display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical', WebkitLineClamp: 2
                         }}>
                             {t.title || 'Item'}
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             {sourceType === 'reddit' && (
-                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>
-                                    ▲ {t.score?.toLocaleString() || '0'}
-                                </span>
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>▲ {t.score?.toLocaleString() || '0'}</span>
                             )}
                             <ExternalLink size={12} color="rgba(255,255,255,0.9)" style={{ marginLeft: 'auto' }} />
                         </div>
@@ -271,17 +225,39 @@ function ThumbnailGrid({ thumbnails, sourceType }: { thumbnails: Thumbnail[]; so
 
 export default function DigestCard({ digest }: { digest: Digest }) {
     const col = sourceColor(digest.source_type)
-    const isReddit = digest.source_type === 'reddit'
-    const aiGenerated = isAIGenerated(digest.content)
     const thumbnails = digest.metadata?.thumbnails ?? []
     const [isExpanded, setIsExpanded] = useState(false)
 
-    const contentPreview = digest.content
-        .split('\n')
-        .filter(l => l.trim() && !l.includes('**'))
-        .slice(0, 2)
-        .join(' ')
-        .substring(0, 120)
+    const rich = isRichFormat(digest.content)
+    const aiGen = isAIGenerated(digest.content)
+
+    // Preview: prefer the first real bullet, stripped of markdown
+    const contentPreview = (() => {
+        const lines = digest.content.split('\n')
+        const bullet = lines.find(l => l.trim().startsWith('•') || l.trim().startsWith('-'))
+        if (bullet) return bullet.replace(/^[•\-]\s*/, '').replace(/\*\*/g, '').slice(0, 130)
+        return lines.find(l => l.trim() && !l.trim().startsWith('**'))?.replace(/\*\*/g, '').slice(0, 130) ?? ''
+    })()
+
+    const badge = rich ? (
+        <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700,
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(250,204,21,0.15))',
+            color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', whiteSpace: 'nowrap'
+        }}>
+            <Zap size={10} /> PRO
+        </div>
+    ) : aiGen ? (
+        <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            padding: '4px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700,
+            background: 'rgba(124,58,237,0.15)', color: '#a78bfa',
+            border: '1px solid rgba(124,58,237,0.3)', whiteSpace: 'nowrap'
+        }}>
+            <Sparkles size={11} /> AI
+        </div>
+    ) : null
 
     const cardHeader = (
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -304,16 +280,7 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                     </div>
                 </div>
             </div>
-            {aiGenerated && (
-                <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
-                    padding: '4px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700,
-                    background: 'rgba(124,58,237,0.15)', color: '#a78bfa',
-                    border: '1px solid rgba(124,58,237,0.3)', whiteSpace: 'nowrap'
-                }}>
-                    <Sparkles size={11} /> AI
-                </div>
-            )}
+            {badge}
         </div>
     )
 
@@ -323,20 +290,22 @@ export default function DigestCard({ digest }: { digest: Digest }) {
             <div
                 onClick={() => setIsExpanded(true)}
                 style={{
-                    background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(124,58,237,0.03) 100%)',
-                    border: `1px solid ${col.border}`,
+                    background: rich
+                        ? 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(124,58,237,0.06) 100%)'
+                        : 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(124,58,237,0.03) 100%)',
+                    border: `1px solid ${rich ? 'rgba(124,58,237,0.35)' : col.border}`,
                     borderRadius: 16, padding: 0,
                     display: 'flex', flexDirection: 'column', gap: 0,
                     overflow: 'hidden', transition: 'all 0.3s ease',
                     cursor: 'pointer', height: '100%', position: 'relative'
                 }}
-                onMouseEnter={(e) => {
+                onMouseEnter={e => {
                     (e.currentTarget as HTMLElement).style.borderColor = col.color
-                    ;(e.currentTarget as HTMLElement).style.boxShadow = `0 16px 32px rgba(0,0,0,0.1)`
+                    ;(e.currentTarget as HTMLElement).style.boxShadow = `0 16px 32px rgba(0,0,0,0.12)`
                     ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
                 }}
-                onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.borderColor = col.border
+                onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.borderColor = rich ? 'rgba(124,58,237,0.35)' : col.border
                     ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
                     ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
                 }}
@@ -353,14 +322,14 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                         display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3,
                         overflow: 'hidden', flex: 1
                     }}>
-                        {contentPreview}...
+                        {contentPreview}…
                     </div>
                 </div>
                 <div style={{
                     padding: '12px 20px', borderTop: `1px solid ${col.border}`,
-                    background: 'rgba(124,58,237,0.02)', display: 'flex',
-                    alignItems: 'center', gap: 8, fontSize: 12, color: col.color,
-                    fontWeight: 600, justifyContent: 'space-between'
+                    background: rich ? 'rgba(124,58,237,0.04)' : 'rgba(124,58,237,0.02)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    fontSize: 12, color: col.color, fontWeight: 600, justifyContent: 'space-between'
                 }}>
                     <span>View full digest</span>
                     <ChevronDown size={14} style={{ opacity: 0.6 }} />
@@ -373,23 +342,23 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                     onClick={() => setIsExpanded(false)}
                     style={{
                         position: 'fixed', inset: 0, zIndex: 1000,
-                        background: 'rgba(0,0,0,0.75)',
-                        backdropFilter: 'blur(6px)',
+                        background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '24px',
-                        animation: 'digestOverlayIn 0.2s ease'
+                        padding: '24px', animation: 'digestOverlayIn 0.2s ease'
                     }}
                 >
                     <div
                         onClick={e => e.stopPropagation()}
                         style={{
                             background: 'var(--bg-secondary)',
-                            border: `1px solid ${col.border}`,
+                            border: `1px solid ${rich ? 'rgba(124,58,237,0.45)' : col.border}`,
                             borderRadius: 20, padding: 0,
-                            width: '100%', maxWidth: 620,
-                            maxHeight: '85vh', overflow: 'hidden',
+                            width: '100%', maxWidth: 640,
+                            maxHeight: '88vh', overflow: 'hidden',
                             display: 'flex', flexDirection: 'column',
-                            boxShadow: `0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px ${col.border}`,
+                            boxShadow: rich
+                                ? `0 32px 80px rgba(0,0,0,0.5), 0 0 60px rgba(124,58,237,0.15), 0 0 0 1px rgba(124,58,237,0.3)`
+                                : `0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px ${col.border}`,
                             animation: 'digestCardIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
                         }}
                     >
@@ -401,10 +370,7 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                             </h3>
                             {thumbnails.length > 0 && <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />}
                             <div>
-                                {(isReddit && aiGenerated)
-                                    ? <RedditDigestContent content={digest.content} />
-                                    : <GenericDigestContent content={digest.content} accentColor={col.gradient} />
-                                }
+                                <DigestContent content={digest.content} accentColor={col.gradient} />
                             </div>
                         </div>
                         <div
