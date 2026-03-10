@@ -321,7 +321,16 @@ async function fetchBluesky(url: string): Promise<FetchResult> {
     }
 }
 
+async function fetchTikTok(url: string): Promise<FetchResult> {
+    const handleMatch = url.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/)
+    if (!handleMatch) throw new Error('Could not extract TikTok handle. Use format: tiktok.com/@username')
+    const handle = handleMatch[1]
+    // Route through RSSHub which converts TikTok profiles to RSS
+    return fetchRSS(`https://rsshub.app/tiktok/user/@${handle}`)
+}
+
 async function fetchHackerNews(url: string): Promise<FetchResult> {
+    // Extract section from URL or default to top stories
     const sectionMatch = url.match(/news\.ycombinator\.com\/(top|new|best|ask|show|job)/)
     const section = sectionMatch ? sectionMatch[1] : 'top'
 
@@ -401,6 +410,8 @@ export async function POST(req: NextRequest) {
             fetchResult = await fetchTwitter(source.url)
         } else if (source.type === 'bluesky') {
             fetchResult = await fetchBluesky(source.url)
+        } else if (source.type === 'tiktok') {
+            fetchResult = await fetchTikTok(source.url)
         } else if (source.type === 'hackernews') {
             fetchResult = await fetchHackerNews(source.url)
         } else {
