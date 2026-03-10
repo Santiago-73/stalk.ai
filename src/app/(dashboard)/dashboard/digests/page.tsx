@@ -10,6 +10,7 @@ interface Digest {
     source_type: string
     content: string
     created_at: string
+    metadata?: any
 }
 
 
