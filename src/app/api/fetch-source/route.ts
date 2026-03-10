@@ -6,7 +6,7 @@ const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_
 
 async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean = false): Promise<string> {
     // Use better model for paid accounts
-    const model = isPaid ? 'gemini-1.5-pro' : 'gemini-2.0-flash-lite'
+    const model = isPaid ? 'gemini-1.5-pro' : 'gemini-1.5-flash'
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
@@ -346,9 +346,16 @@ export async function POST(req: NextRequest) {
         const hasPaidKey = !!process.env.GOOGLE_GEMINI_API_KEY_PAID
         const hasFreeKey = !!process.env.GOOGLE_GEMINI_API_KEY_FREE
 
+        // Helper to validate key
+        const getValidKey = (k: string | undefined) => (k && k.startsWith('AIza') ? k : null)
+
+        const paidKey = getValidKey(process.env.GOOGLE_GEMINI_API_KEY_PAID)
+        const freeKey = getValidKey(process.env.GOOGLE_GEMINI_API_KEY_FREE)
+        const defaultKey = getValidKey(process.env.GOOGLE_GEMINI_API_KEY)
+
         const apiKey = (userPlan === 'pro' || userPlan === 'ultra')
-            ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
-            : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
+            ? (paidKey || defaultKey)
+            : (freeKey || defaultKey)
 
         const isPaidUser = userPlan === 'pro' || userPlan === 'ultra'
 
