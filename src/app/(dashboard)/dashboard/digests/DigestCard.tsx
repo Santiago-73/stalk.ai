@@ -272,7 +272,6 @@ function ThumbnailGrid({ thumbnails, sourceType }: { thumbnails: Thumbnail[]; so
 export default function DigestCard({ digest }: { digest: Digest }) {
     const col = sourceColor(digest.source_type)
     const isReddit = digest.source_type === 'reddit'
-    const isYoutube = digest.source_type === 'youtube'
     const aiGenerated = isAIGenerated(digest.content)
     const thumbnails = digest.metadata?.thumbnails ?? []
     const [isExpanded, setIsExpanded] = useState(false)
@@ -284,155 +283,157 @@ export default function DigestCard({ digest }: { digest: Digest }) {
         .join(' ')
         .substring(0, 120)
 
-    return (
-        <div
-            onClick={() => setIsExpanded(!isExpanded)}
-            style={{
-                background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(124,58,237,0.03) 100%)',
-                border: `1px solid ${col.border}`,
-                borderRadius: 16,
-                padding: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-                overflow: 'hidden',
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                height: isExpanded ? 'auto' : '100%',
-                position: 'relative'
-            }}
-            onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = col.color
-                    ; (e.currentTarget as HTMLElement).style.boxShadow = `0 16px 32px rgba(0,0,0,0.1), inset 0 1px 0 ${col.border}`
-                    ; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
-            }}
-            onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = col.border
-                    ; (e.currentTarget as HTMLElement).style.boxShadow = 'none'
-                    ; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-            }}
-        >
-            {/* Top accent bar */}
-            <div style={{
-                height: 4,
-                background: col.gradient,
-                width: '100%'
-            }} />
-
-            {/* Main content */}
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 8,
-                            background: col.bg,
-                            border: `1.5px solid ${col.color}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: col.color,
-                            flexShrink: 0
-                        }}>
-                            <SourceIcon type={digest.source_type} />
-                        </div>
-                        <div>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: col.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                                {digest.source_type}
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                                <Clock size={11} />
-                                {formatRelative(digest.created_at)}
-                            </div>
-                        </div>
-                    </div>
-                    {aiGenerated && (
-                        <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '4px 10px',
-                            borderRadius: 12,
-                            fontSize: 10,
-                            fontWeight: 700,
-                            background: 'rgba(124,58,237,0.15)',
-                            color: '#a78bfa',
-                            border: '1px solid rgba(124,58,237,0.3)',
-                            whiteSpace: 'nowrap'
-                        }}>
-                            <Sparkles size={11} />
-                            AI
-                        </div>
-                    )}
-                </div>
-
-                {/* Source name */}
-                <h3 style={{
-                    margin: 0,
-                    fontSize: 16,
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    lineHeight: 1.3,
-                    wordBreak: 'break-word'
+    const cardHeader = (
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1 }}>
+                <div style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: col.bg, border: `1.5px solid ${col.color}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: col.color, flexShrink: 0
                 }}>
-                    {digest.source_name}
-                </h3>
+                    <SourceIcon type={digest.source_type} />
+                </div>
+                <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: col.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        {digest.source_type}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        <Clock size={11} />
+                        {formatRelative(digest.created_at)}
+                    </div>
+                </div>
+            </div>
+            {aiGenerated && (
+                <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    padding: '4px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700,
+                    background: 'rgba(124,58,237,0.15)', color: '#a78bfa',
+                    border: '1px solid rgba(124,58,237,0.3)', whiteSpace: 'nowrap'
+                }}>
+                    <Sparkles size={11} /> AI
+                </div>
+            )}
+        </div>
+    )
 
-                {/* Thumbnails if exist */}
-                {thumbnails.length > 0 && (
-                    <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />
-                )}
-
-                {/* Content preview */}
-                {!isExpanded && (
+    return (
+        <>
+            {/* Card (collapsed) */}
+            <div
+                onClick={() => setIsExpanded(true)}
+                style={{
+                    background: 'linear-gradient(135deg, var(--bg-secondary) 0%, rgba(124,58,237,0.03) 100%)',
+                    border: `1px solid ${col.border}`,
+                    borderRadius: 16, padding: 0,
+                    display: 'flex', flexDirection: 'column', gap: 0,
+                    overflow: 'hidden', transition: 'all 0.3s ease',
+                    cursor: 'pointer', height: '100%', position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = col.color
+                    ;(e.currentTarget as HTMLElement).style.boxShadow = `0 16px 32px rgba(0,0,0,0.1)`
+                    ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
+                }}
+                onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.borderColor = col.border
+                    ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
+                    ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                }}
+            >
+                <div style={{ height: 4, background: col.gradient, width: '100%' }} />
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
+                    {cardHeader}
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3, wordBreak: 'break-word' }}>
+                        {digest.source_name}
+                    </h3>
+                    {thumbnails.length > 0 && <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />}
                     <div style={{
-                        fontSize: 13,
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.6,
-                        display: '-webkit-box',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 3,
-                        overflow: 'hidden',
-                        flex: 1
+                        fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6,
+                        display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3,
+                        overflow: 'hidden', flex: 1
                     }}>
                         {contentPreview}...
                     </div>
-                )}
+                </div>
+                <div style={{
+                    padding: '12px 20px', borderTop: `1px solid ${col.border}`,
+                    background: 'rgba(124,58,237,0.02)', display: 'flex',
+                    alignItems: 'center', gap: 8, fontSize: 12, color: col.color,
+                    fontWeight: 600, justifyContent: 'space-between'
+                }}>
+                    <span>View full digest</span>
+                    <ChevronDown size={14} style={{ opacity: 0.6 }} />
+                </div>
+            </div>
 
-                {/* Full content */}
-                {isExpanded && (
-                    <div style={{ marginTop: 8 }}>
-                        {(isReddit && aiGenerated) ? (
-                            <div style={{ maxHeight: 200, overflow: 'auto' }}>
-                                <RedditDigestContent content={digest.content} />
+            {/* Modal overlay */}
+            {isExpanded && (
+                <div
+                    onClick={() => setIsExpanded(false)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 1000,
+                        background: 'rgba(0,0,0,0.75)',
+                        backdropFilter: 'blur(6px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '24px',
+                        animation: 'digestOverlayIn 0.2s ease'
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: 'var(--bg-secondary)',
+                            border: `1px solid ${col.border}`,
+                            borderRadius: 20, padding: 0,
+                            width: '100%', maxWidth: 620,
+                            maxHeight: '85vh', overflow: 'hidden',
+                            display: 'flex', flexDirection: 'column',
+                            boxShadow: `0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px ${col.border}`,
+                            animation: 'digestCardIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        }}
+                    >
+                        <div style={{ height: 4, background: col.gradient, width: '100%', flexShrink: 0 }} />
+                        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+                            {cardHeader}
+                            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                                {digest.source_name}
+                            </h3>
+                            {thumbnails.length > 0 && <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />}
+                            <div>
+                                {(isReddit && aiGenerated)
+                                    ? <RedditDigestContent content={digest.content} />
+                                    : <GenericDigestContent content={digest.content} accentColor={col.gradient} />
+                                }
                             </div>
-                        ) : (
-                            <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                                <GenericDigestContent content={digest.content} accentColor={col.gradient} />
-                            </div>
-                        )}
+                        </div>
+                        <div
+                            onClick={() => setIsExpanded(false)}
+                            style={{
+                                padding: '14px 24px', borderTop: `1px solid ${col.border}`,
+                                background: 'rgba(124,58,237,0.03)', display: 'flex',
+                                alignItems: 'center', gap: 8, fontSize: 13, color: col.color,
+                                fontWeight: 600, justifyContent: 'space-between',
+                                cursor: 'pointer', flexShrink: 0
+                            }}
+                        >
+                            <span>Close</span>
+                            <ChevronDown size={14} style={{ opacity: 0.6, transform: 'rotate(180deg)' }} />
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
-            {/* Footer action */}
-            <div style={{
-                padding: '12px 20px',
-                borderTop: `1px solid ${col.border}`,
-                background: 'rgba(124,58,237,0.02)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: 12,
-                color: col.color,
-                fontWeight: 600,
-                justifyContent: 'space-between'
-            }}>
-                <span>{isExpanded ? 'Collapse digest' : 'View full digest'}</span>
-                <ChevronDown size={14} style={{ opacity: 0.6, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s ease' }} />
-            </div>
-        </div>
+            <style>{`
+                @keyframes digestOverlayIn {
+                    from { opacity: 0; }
+                    to   { opacity: 1; }
+                }
+                @keyframes digestCardIn {
+                    from { opacity: 0; transform: scale(0.92) translateY(16px); }
+                    to   { opacity: 1; transform: scale(1) translateY(0); }
+                }
+            `}</style>
+        </>
     )
 }
