@@ -122,41 +122,71 @@ async function fetchRSS(url: string): Promise<FetchResult> {
     return { text, thumbnails }
 }
 
+async function getRedditAccessToken(): Promise<string> {
+    const clientId = process.env.REDDIT_CLIENT_ID
+    const clientSecret = process.env.REDDIT_CLIENT_SECRET
+    if (!clientId || !clientSecret) throw new Error('Reddit API credentials not configured')
+
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+    const res = await fetch('https://www.reddit.com/api/v1/access_token', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'stalk-ai/1.0 by sanespi012',
+        },
+        body: 'grant_type=client_credentials',
+        signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) throw new Error(`Reddit OAuth failed: ${res.status}`)
+    const json = await res.json()
+    if (!json.access_token) throw new Error('No access token in Reddit response')
+    return json.access_token
+}
+
 async function fetchReddit(url: string): Promise<FetchResult> {
-    // Reject search URLs — only subreddit URLs work
     if (url.includes('/search') || url.includes('?q=')) {
         throw new Error('Reddit search URLs are not supported. Use a subreddit URL like reddit.com/r/ROS2')
     }
 
-    // Extract subreddit from URL
     const subMatch = url.match(/reddit\.com\/r\/([A-Za-z0-9_]+)/)
     if (!subMatch) throw new Error('Could not extract subreddit from URL. Use format: reddit.com/r/SUBREDDIT')
     const subreddit = subMatch[1]
 
-    const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=15`, {
-        headers: { 'User-Agent': 'StalkAi/1.0' }
-    })
-    
-    // Reddit API blocks us sometimes, fallback to RSS
-    if (!res.ok) {
-        console.warn(`Reddit JSON API failed for ${subreddit}, falling back to RSS`)
-        const rssUrl = `https://www.reddit.com/r/${subreddit}/.rss`
-        return fetchRSS(rssUrl)
+    // Use OAuth if credentials available, otherwise fallback to unauthenticated
+    let token: string | null = null
+    try {
+        token = await getRedditAccessToken()
+    } catch (e) {
+        console.warn('[Reddit] OAuth failed, trying unauthenticated:', e)
     }
-    
+
+    const apiBase = token ? 'https://oauth.reddit.com' : 'https://www.reddit.com'
+    const headers: Record<string, string> = {
+        'User-Agent': 'stalk-ai/1.0 by sanespi012',
+    }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    const res = await fetch(`${apiBase}/r/${subreddit}/hot.json?limit=15`, {
+        headers,
+        signal: AbortSignal.timeout(10000),
+    })
+
+    if (!res.ok) throw new Error(`Reddit API returned ${res.status} for r/${subreddit}`)
+
     const data = await res.json()
     const posts = data.data?.children || []
     const thumbnails: Thumbnail[] = []
-    
-    const text = posts.map((p: any) => {
+
+    const text = posts.slice(0, 10).map((p: any) => {
         const title = p.data.title
         const score = p.data.score
         const link = `https://reddit.com${p.data.permalink}`
-        
+
         let thumb = ''
         if (p.data.preview?.images?.[0]?.source?.url) {
             thumb = p.data.preview.images[0].source.url.replace(/&amp;/g, '&')
-        } else if (p.data.thumbnail && p.data.thumbnail !== 'self' && p.data.thumbnail !== 'default') {
+        } else if (p.data.thumbnail && p.data.thumbnail !== 'self' && p.data.thumbnail !== 'default' && p.data.thumbnail.startsWith('http')) {
             thumb = p.data.thumbnail
         }
 
@@ -166,7 +196,7 @@ async function fetchReddit(url: string): Promise<FetchResult> {
 
         return `Title: ${title} (Score: ${score})\nLink: ${link}\n---`
     }).join('\n')
-    
+
     return { text, thumbnails }
 }
 

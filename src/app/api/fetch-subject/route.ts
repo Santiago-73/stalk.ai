@@ -62,10 +62,51 @@ async function fetchYouTube(url: string): Promise<string> {
     return fetchRSS(feedUrl)
 }
 
+async function getRedditAccessToken(): Promise<string> {
+    const clientId = process.env.REDDIT_CLIENT_ID
+    const clientSecret = process.env.REDDIT_CLIENT_SECRET
+    if (!clientId || !clientSecret) throw new Error('Reddit API credentials not configured')
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+    const res = await fetch('https://www.reddit.com/api/v1/access_token', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'stalk-ai/1.0 by sanespi012',
+        },
+        body: 'grant_type=client_credentials',
+        signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) throw new Error(`Reddit OAuth failed: ${res.status}`)
+    const json = await res.json()
+    if (!json.access_token) throw new Error('No access token in Reddit response')
+    return json.access_token
+}
+
 async function fetchReddit(url: string): Promise<string> {
     const subMatch = url.match(/reddit\.com\/r\/([A-Za-z0-9_]+)/)
     if (!subMatch) throw new Error('Could not extract subreddit from URL')
-    return fetchRSS(`https://www.reddit.com/r/${subMatch[1]}/.rss`)
+    const subreddit = subMatch[1]
+
+    let token: string | null = null
+    try { token = await getRedditAccessToken() } catch (e) {
+        console.warn('[Reddit/subject] OAuth failed, trying unauthenticated:', e)
+    }
+
+    const apiBase = token ? 'https://oauth.reddit.com' : 'https://www.reddit.com'
+    const headers: Record<string, string> = { 'User-Agent': 'stalk-ai/1.0 by sanespi012' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    const res = await fetch(`${apiBase}/r/${subreddit}/hot.json?limit=12`, {
+        headers, signal: AbortSignal.timeout(10000),
+    })
+    if (!res.ok) throw new Error(`Reddit API returned ${res.status} for r/${subreddit}`)
+
+    const data = await res.json()
+    const posts: any[] = data.data?.children || []
+    return posts.slice(0, 10).map((p: any) =>
+        `• ${p.data.title} (Score: ${p.data.score}) — https://reddit.com${p.data.permalink}`
+    ).join('\n')
 }
 
 async function fetchTikTok(url: string): Promise<string> {
