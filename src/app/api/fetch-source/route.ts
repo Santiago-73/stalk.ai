@@ -416,24 +416,30 @@ export async function POST(req: NextRequest) {
 
         // Fetch content from the web
         let fetchResult: FetchResult
-        if (source.type === 'reddit') {
-            fetchResult = await fetchReddit(source.url)
-        } else if (source.type === 'youtube') {
-            fetchResult = await fetchYouTube(source.url)
-        } else if (source.type === 'twitter') {
-            fetchResult = await fetchTwitter(source.url)
-        } else if (source.type === 'bluesky') {
-            fetchResult = await fetchBluesky(source.url)
-        } else if (source.type === 'tiktok') {
-            fetchResult = await fetchTikTok(source.url)
-        } else if (source.type === 'hackernews') {
-            fetchResult = await fetchHackerNews(source.url)
-        } else {
-            fetchResult = await fetchRSS(source.url)
+        try {
+            if (source.type === 'reddit') {
+                fetchResult = await fetchReddit(source.url)
+            } else if (source.type === 'youtube') {
+                fetchResult = await fetchYouTube(source.url)
+            } else if (source.type === 'twitter') {
+                fetchResult = await fetchTwitter(source.url)
+            } else if (source.type === 'bluesky') {
+                fetchResult = await fetchBluesky(source.url)
+            } else if (source.type === 'tiktok') {
+                fetchResult = await fetchTikTok(source.url)
+            } else if (source.type === 'hackernews') {
+                fetchResult = await fetchHackerNews(source.url)
+            } else {
+                fetchResult = await fetchRSS(source.url)
+            }
+        } catch (fetchErr) {
+            const msg = fetchErr instanceof Error ? fetchErr.message : 'Could not fetch content from source'
+            console.error(`[fetch-source] Fetch failed for ${source.type} (${source.url}):`, fetchErr)
+            return NextResponse.json({ error: msg }, { status: 422 })
         }
 
         const rawContent = fetchResult.text
-        if (!rawContent) return NextResponse.json({ error: 'No content fetched' }, { status: 422 })
+        if (!rawContent) return NextResponse.json({ error: 'No content fetched from source' }, { status: 422 })
 
         // 1. Get user profile to check plan
         const { data: profile } = await supabase
