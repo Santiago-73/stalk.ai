@@ -18,7 +18,7 @@ async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean = 
     )
     if (!res.ok) {
         const body = await res.text()
-        console.error(`[Gemini] Model: ${model}, Status: ${res.status}, Response: ${body}`)
+        console.error(`[Gemini Request Failed] URL: ${res.url.replace(/key=.*$/, 'key=HIDDEN')} Model: ${model}, Status: ${res.status}, Response: ${body}`)
         const err = new Error(`Gemini API error ${res.status}: ${body}`) as Error & { status: number }
         err.status = res.status
         throw err
@@ -359,7 +359,8 @@ export async function POST(req: NextRequest) {
 
         const isPaidUser = userPlan === 'pro' || userPlan === 'ultra'
 
-        console.log(`[Digest] Keys - Paid set: ${hasPaidKey}, Free set: ${hasFreeKey}, Using paid key: ${isPaidUser}`)
+        const debugKey = apiKey ? apiKey.substring(0, 10) + '...' : 'NONE'
+        console.log(`[Digest Debug] Keys - Paid set: ${hasPaidKey}, Free set: ${hasFreeKey}, Using paid key: ${isPaidUser}, Final Key starts with: ${debugKey}`)
 
         // Generate digest with Gemini, fall back to rule-based if quota exceeded
         const prompt = `You are a concise content summarizer. Given the following recent posts/items from "${source.name}", write a tight digest of exactly 4–5 bullet points (use • character) in the SAME language as the content. Focus on the most interesting or important items. Be informative but brief. No intro sentence, just bullets.\n\nContent:\n${rawContent}`
