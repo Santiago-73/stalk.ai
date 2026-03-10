@@ -39,6 +39,7 @@ interface RSSItem {
     summary?: string
     content?: string
     'media:group'?: { 'media:description'?: string }
+    'media:content'?: { '@_url'?: string }
     link?: string | { '@_href'?: string }
 }
 
@@ -53,7 +54,21 @@ function decodeEntities(text: string): string {
         .replace(/&nbsp;/g, ' ')
 }
 
-async function fetchRSS(url: string): Promise<string> {
+// --- Fetchers ---
+
+interface Thumbnail {
+    title: string
+    thumb: string
+    permalink: string
+    score?: number
+}
+
+interface FetchResult {
+    text: string
+    thumbnails: Thumbnail[]
+}
+
+async function fetchRSS(url: string): Promise<FetchResult> {
     const res = await fetch(url, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -69,9 +84,11 @@ async function fetchRSS(url: string): Promise<string> {
     const channel = parsed?.rss?.channel ?? parsed?.feed ?? {}
     const rawItems: RSSItem[] = channel.item ?? channel.entry ?? []
     const items = Array.isArray(rawItems) ? rawItems : [rawItems]
+    
+    const thumbnails: Thumbnail[] = []
 
     const top = items.slice(0, 8)
-    return top
+    const text = top
         .map((item) => {
             const title = decodeEntities(item.title ?? '')
 
@@ -79,6 +96,18 @@ async function fetchRSS(url: string): Promise<string> {
             let rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
             if (typeof rawDesc === 'object' && rawDesc !== null) {
                 rawDesc = (rawDesc as any)['#text'] ?? (rawDesc as any)._text ?? JSON.stringify(rawDesc)
+            }
+            
+            // Try to extract an image from the raw description html if it exists
+            const imgMatch = typeof rawDesc === 'string' ? rawDesc.match(/<img[^>]+src="([^">]+)"/) : null
+            let thumbUrl = ''
+            if (imgMatch) thumbUrl = imgMatch[1]
+            else if (item['media:content'] && item['media:content']['@_url']) thumbUrl = item['media:content']['@_url']
+            
+            const link = typeof item.link === 'string' ? item.link : (item.link?.['@_href'] || '')
+            
+            if (thumbUrl && link && thumbnails.length < 5) {
+                thumbnails.push({ title, thumb: thumbUrl, permalink: link })
             }
 
             // Strip HTML tags, decode entities, and clean up
@@ -89,9 +118,11 @@ async function fetchRSS(url: string): Promise<string> {
             return `• ${title}: ${clean}`
         })
         .join('\n')
+        
+    return { text, thumbnails }
 }
 
-async function fetchReddit(url: string): Promise<string> {
+async function fetchReddit(url: string): Promise<FetchResult> {
     // Reject search URLs — only subreddit URLs work
     if (url.includes('/search') || url.includes('?q=')) {
         throw new Error('Reddit search URLs are not supported. Use a subreddit URL like reddit.com/r/ROS2')
@@ -102,12 +133,44 @@ async function fetchReddit(url: string): Promise<string> {
     if (!subMatch) throw new Error('Could not extract subreddit from URL. Use format: reddit.com/r/SUBREDDIT')
     const subreddit = subMatch[1]
 
-    // Use RSS endpoint which is often more stable and less prone to 403 than the JSON one
-    const rssUrl = `https://www.reddit.com/r/${subreddit}/.rss`
-    return fetchRSS(rssUrl)
+    const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=15`, {
+        headers: { 'User-Agent': 'StalkAi/1.0' }
+    })
+    
+    // Reddit API blocks us sometimes, fallback to RSS
+    if (!res.ok) {
+        console.warn(`Reddit JSON API failed for ${subreddit}, falling back to RSS`)
+        const rssUrl = `https://www.reddit.com/r/${subreddit}/.rss`
+        return fetchRSS(rssUrl)
+    }
+    
+    const data = await res.json()
+    const posts = data.data?.children || []
+    const thumbnails: Thumbnail[] = []
+    
+    const text = posts.map((p: any) => {
+        const title = p.data.title
+        const score = p.data.score
+        const link = `https://reddit.com${p.data.permalink}`
+        
+        let thumb = ''
+        if (p.data.preview?.images?.[0]?.source?.url) {
+            thumb = p.data.preview.images[0].source.url.replace(/&amp;/g, '&')
+        } else if (p.data.thumbnail && p.data.thumbnail !== 'self' && p.data.thumbnail !== 'default') {
+            thumb = p.data.thumbnail
+        }
+
+        if (thumb && link && thumbnails.length < 5) {
+            thumbnails.push({ title, thumb, permalink: link, score })
+        }
+
+        return `Title: ${title} (Score: ${score})\nLink: ${link}\n---`
+    }).join('\n')
+    
+    return { text, thumbnails }
 }
 
-async function fetchYouTube(url: string): Promise<string> {
+async function fetchYouTube(url: string): Promise<FetchResult> {
     // Try to extract channel ID or handle from various YouTube URL formats
     let channelId = ''
     let feedUrl = ''
@@ -120,7 +183,6 @@ async function fetchYouTube(url: string): Promise<string> {
         channelId = channelMatch[1]
         feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`
     } else if (handleMatch || userMatch) {
-        // For @handles and /user/ we still need the channel ID — scrape the page first
         const page = await fetch(url, { signal: AbortSignal.timeout(10000) })
         const html = await page.text()
         const idMatch = html.match(/"channelId":"(UC[A-Za-z0-9_-]+)"/)
@@ -130,14 +192,14 @@ async function fetchYouTube(url: string): Promise<string> {
         throw new Error('Unrecognised YouTube URL format')
     }
 
-    return fetchRSS(feedUrl)
+    const rssData = await fetchRSS(feedUrl)
+    return rssData
 }
 
-async function fetchTwitter(url: string): Promise<string> {
+async function fetchTwitter(url: string): Promise<FetchResult> {
     const bearerToken = process.env.TWITTER_API_TOKEN
     if (!bearerToken) throw new Error('Twitter API token not configured')
 
-    // Extract @handle from various URL formats
     const handleMatch = url.match(/twitter\.com\/(@?[A-Za-z0-9_]+)/)
     if (!handleMatch) throw new Error('Could not extract Twitter handle from URL. Use format: twitter.com/@handle')
 
@@ -145,67 +207,70 @@ async function fetchTwitter(url: string): Promise<string> {
     if (handle.startsWith('@')) handle = handle.slice(1)
 
     try {
-        // Get user ID from handle
         const userRes = await fetch(
             `https://api.twitter.com/2/users/by/username/${handle}?user.fields=id,name,public_metrics`,
-            {
-                headers: { Authorization: `Bearer ${bearerToken}` },
-                signal: AbortSignal.timeout(10000),
-            }
+            { headers: { Authorization: `Bearer ${bearerToken}` }, signal: AbortSignal.timeout(10000) }
         )
 
-        if (!userRes.ok) {
-            const err = await userRes.text()
-            throw new Error(`Twitter user lookup failed: ${err}`)
-        }
-
+        if (!userRes.ok) throw new Error(`Twitter user lookup failed`)
         const userData = await userRes.json()
         const userId = userData?.data?.id
         if (!userId) throw new Error('Could not find Twitter user')
 
-        // Get latest tweets
         const tweetsRes = await fetch(
-            `https://api.twitter.com/2/users/${userId}/tweets?max_results=10&tweet.fields=created_at,public_metrics&expansions=author_id`,
-            {
-                headers: { Authorization: `Bearer ${bearerToken}` },
-                signal: AbortSignal.timeout(10000),
-            }
+            `https://api.twitter.com/2/users/${userId}/tweets?max_results=10&tweet.fields=created_at,public_metrics,attachments&expansions=attachments.media_keys&media.fields=url,preview_image_url`,
+            { headers: { Authorization: `Bearer ${bearerToken}` }, signal: AbortSignal.timeout(10000) }
         )
 
         if (!tweetsRes.ok) throw new Error('Failed to fetch tweets')
-
         const tweetsData = await tweetsRes.json()
         const tweets = tweetsData?.data || []
-
+        const media = tweetsData?.includes?.media || []
+        
         if (tweets.length === 0) throw new Error('No tweets found')
+        
+        const thumbnails: Thumbnail[] = []
+        const mediaMap = new Map()
+        media.forEach((m: any) => {
+            mediaMap.set(m.media_key, m.url || m.preview_image_url)
+        })
 
-        return tweets
+        const text = tweets
             .slice(0, 8)
             .map((tweet: any) => {
-                const text = tweet.text?.replace(/\n/g, ' ').slice(0, 300) || 'Tweet'
+                const tweetText = tweet.text?.replace(/\n/g, ' ').slice(0, 300) || 'Tweet'
                 const likes = tweet.public_metrics?.like_count || 0
                 const retweets = tweet.public_metrics?.retweet_count || 0
-                return `• ${text} [❤️ ${likes} | 🔄 ${retweets}]`
+                
+                // Try grabbing photo
+                if (tweet.attachments?.media_keys?.[0] && thumbnails.length < 5) {
+                    const imgUrl = mediaMap.get(tweet.attachments.media_keys[0])
+                    if (imgUrl) {
+                        thumbnails.push({ title: tweetText.substring(0, 60), thumb: imgUrl, permalink: `https://twitter.com/${handle}/status/${tweet.id}`, score: likes })
+                    }
+                }
+                
+                return `• ${tweetText} [❤️ ${likes} | 🔄 ${retweets}]`
             })
             .join('\n')
+            
+        return { text, thumbnails }
     } catch (err) {
         console.error('[Twitter Fetch Error]', err)
         throw err
     }
 }
 
-async function fetchBluesky(url: string): Promise<string> {
+async function fetchBluesky(url: string): Promise<FetchResult> {
     const match = url.match(/bsky\.app\/profile\/([^/?#]+)/)
     if (!match) throw new Error('Invalid Bluesky profile URL. Use format: bsky.app/profile/username')
     let handle = match[1]
 
-    // Auto-append .bsky.social if the user just put their short handle (no dots)
     if (!handle.includes('.')) {
         handle += '.bsky.social'
     }
 
     try {
-        // Get actor profile
         const profileRes = await fetch(
             `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${handle}`,
             { signal: AbortSignal.timeout(10000) }
@@ -216,41 +281,51 @@ async function fetchBluesky(url: string): Promise<string> {
         const did = profile?.did
         if (!did) throw new Error('Could not find Bluesky user DID')
 
-        // Get latest posts from feed
         const feedRes = await fetch(
             `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}&limit=10`,
             { signal: AbortSignal.timeout(10000) }
         )
 
         if (!feedRes.ok) throw new Error('Failed to fetch Bluesky posts')
-
         const feedData = await feedRes.json()
         const posts = feedData?.feed || []
-
+        
         if (posts.length === 0) throw new Error('No posts found')
 
-        return posts
+        const thumbnails: Thumbnail[] = []
+
+        const text = posts
             .slice(0, 8)
             .map((item: any) => {
-                const text = item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 300) || 'Post'
+                const postText = item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 300) || 'Post'
                 const likes = item.post?.likeCount || 0
                 const replies = item.post?.replyCount || 0
-                return `• ${text} [❤️ ${likes} | 💬 ${replies}]`
+                
+                // Get image
+                const embed = item.post?.embed
+                if (embed?.$type === 'app.bsky.embed.images#view' && embed.images?.length > 0 && thumbnails.length < 5) {
+                    const imgUrl = embed.images[0].thumb
+                    const uriParts = item.post.uri.split('/')
+                    const postId = uriParts[uriParts.length - 1]
+                    thumbnails.push({ title: postText.substring(0, 60), thumb: imgUrl, permalink: `https://bsky.app/profile/${handle}/post/${postId}`, score: likes })
+                }
+                
+                return `• ${postText} [❤️ ${likes} | 💬 ${replies}]`
             })
             .join('\n')
+            
+        return { text, thumbnails }
     } catch (err) {
         console.error('[Bluesky Fetch Error]', err)
         throw err
     }
 }
 
-async function fetchHackerNews(url: string): Promise<string> {
-    // Extract section from URL or default to top stories
+async function fetchHackerNews(url: string): Promise<FetchResult> {
     const sectionMatch = url.match(/news\.ycombinator\.com\/(top|new|best|ask|show|job)/)
     const section = sectionMatch ? sectionMatch[1] : 'top'
 
     try {
-        // Get story IDs
         const endpoint = section === 'top'
             ? 'https://hacker-news.firebaseio.com/v0/topstories.json'
             : section === 'new'
@@ -269,7 +344,6 @@ async function fetchHackerNews(url: string): Promise<string> {
         const storyIds = (await idsRes.json()).slice(0, 10)
         if (storyIds.length === 0) throw new Error('No stories found')
 
-        // Fetch story details (limit to 8 to avoid too many requests)
         const stories = await Promise.all(
             storyIds.slice(0, 8).map((id: number) =>
                 fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { signal: AbortSignal.timeout(5000) })
@@ -281,7 +355,8 @@ async function fetchHackerNews(url: string): Promise<string> {
         const validStories = stories.filter(Boolean)
         if (validStories.length === 0) throw new Error('Could not fetch story details')
 
-        return validStories
+        // HN doesn't really have thumbnails, just text
+        const text = validStories
             .map(story => {
                 const title = story.title?.slice(0, 150) || 'Story'
                 const points = story.score || 0
@@ -289,6 +364,8 @@ async function fetchHackerNews(url: string): Promise<string> {
                 return `• ${title} [⬆️ ${points} points | 💬 ${comments}]`
             })
             .join('\n')
+            
+        return { text, thumbnails: [] }
     } catch (err) {
         console.error('[HN Fetch Error]', err)
         throw err
@@ -315,21 +392,22 @@ export async function POST(req: NextRequest) {
         if (srcErr || !source) return NextResponse.json({ error: 'Source not found' }, { status: 404 })
 
         // Fetch content from the web
-        let rawContent = ''
+        let fetchResult: FetchResult
         if (source.type === 'reddit') {
-            rawContent = await fetchReddit(source.url)
+            fetchResult = await fetchReddit(source.url)
         } else if (source.type === 'youtube') {
-            rawContent = await fetchYouTube(source.url)
+            fetchResult = await fetchYouTube(source.url)
         } else if (source.type === 'twitter') {
-            rawContent = await fetchTwitter(source.url)
+            fetchResult = await fetchTwitter(source.url)
         } else if (source.type === 'bluesky') {
-            rawContent = await fetchBluesky(source.url)
+            fetchResult = await fetchBluesky(source.url)
         } else if (source.type === 'hackernews') {
-            rawContent = await fetchHackerNews(source.url)
+            fetchResult = await fetchHackerNews(source.url)
         } else {
-            rawContent = await fetchRSS(source.url)
+            fetchResult = await fetchRSS(source.url)
         }
 
+        const rawContent = fetchResult.text
         if (!rawContent) return NextResponse.json({ error: 'No content fetched' }, { status: 422 })
 
         // 1. Get user profile to check plan
@@ -346,9 +424,7 @@ export async function POST(req: NextRequest) {
         const hasPaidKey = !!process.env.GOOGLE_GEMINI_API_KEY_PAID
         const hasFreeKey = !!process.env.GOOGLE_GEMINI_API_KEY_FREE
 
-        // Helper to validate key
         const getValidKey = (k: string | undefined) => (k && k.startsWith('AIza') ? k : null)
-
         const paidKey = getValidKey(process.env.GOOGLE_GEMINI_API_KEY_PAID)
         const freeKey = getValidKey(process.env.GOOGLE_GEMINI_API_KEY_FREE)
         const defaultKey = getValidKey(process.env.GOOGLE_GEMINI_API_KEY)
@@ -375,6 +451,12 @@ export async function POST(req: NextRequest) {
             digest = fallbackDigest(rawContent, source.name)
         }
 
+        // --- Premium Feature: Extract Images for Paid Users ---
+        let metadata = null
+        if (isPaidUser && fetchResult.thumbnails.length > 0) {
+            metadata = { thumbnails: fetchResult.thumbnails }
+        }
+
         // Save digest to Supabase
         const { data: digestRow, error: digErr } = await supabase
             .from('digests')
@@ -384,6 +466,7 @@ export async function POST(req: NextRequest) {
                 content: digest,
                 source_name: source.name,
                 source_type: source.type,
+                metadata: metadata // New column!
             })
             .select()
             .single()
