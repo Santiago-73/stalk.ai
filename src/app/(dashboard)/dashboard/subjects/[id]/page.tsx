@@ -384,6 +384,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                 {(Object.keys(typeConfig) as SourceType[]).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type
+                                    const unstable = type === 'reddit' || type === 'tiktok'
                                     return (
                                         <button
                                             key={type}
@@ -394,15 +395,31 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                                 background: active ? `${c.color}22` : 'var(--bg-secondary)',
                                                 border: `1px solid ${active ? c.color : 'var(--border)'}`,
                                                 color: active ? c.color : 'var(--text-muted)',
-                                                transition: 'all 0.15s', fontFamily: 'inherit'
+                                                transition: 'all 0.15s', fontFamily: 'inherit',
+                                                position: 'relative'
                                             }}
                                         >
+                                            {unstable && (
+                                                <span style={{
+                                                    position: 'absolute', top: 4, right: 4,
+                                                    fontSize: 9, lineHeight: 1
+                                                }}>⚠️</span>
+                                            )}
                                             {c.icon}
                                             <span style={{ fontSize: 10, fontWeight: 600 }}>{c.label}</span>
                                         </button>
                                     )
                                 })}
                             </div>
+                            {(selectedType === 'reddit' || selectedType === 'tiktok') && (
+                                <div style={{
+                                    marginTop: 8, padding: '9px 12px', borderRadius: 10,
+                                    background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
+                                    fontSize: 11, color: '#ca8a04', lineHeight: 1.5
+                                }}>
+                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> puede ser inestable — estas plataformas bloquean peticiones de servidores cloud con frecuencia.
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ marginBottom: 14 }}>
