@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Youtube, MessageSquare, Rss, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Twitter, TrendingUp } from 'lucide-react'
+import { Plus, Youtube, MessageSquare, Rss, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Twitter, TrendingUp, Music } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews'
+type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok'
 
 interface Source {
     id: string
@@ -43,6 +43,12 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
         color: '#ff6600',
         label: 'Hacker News',
         placeholder: 'https://news.ycombinator.com'
+    },
+    tiktok: {
+        icon: <Music size={16} />,
+        color: '#ff0050',
+        label: 'TikTok',
+        placeholder: 'https://tiktok.com/@username'
     },
     rss: {
         icon: <Rss size={16} />,
@@ -209,7 +215,7 @@ export default function SourcesPage() {
             ) : (
                 <div style={{ display: 'grid', gap: 12 }}>
                     {sources.map(source => {
-                        const config = typeConfig[source.type]
+                        const config = typeConfig[source.type] ?? typeConfig.rss
                         const isGenerating = generatingId === source.id
                         const justDone = toastId === source.id
                         return (
