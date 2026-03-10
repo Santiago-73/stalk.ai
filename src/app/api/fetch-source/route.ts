@@ -5,8 +5,8 @@ import { XMLParser } from 'fast-xml-parser'
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
 
 async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean = false): Promise<string> {
-    // Use better model for paid accounts
-    const model = isPaid ? 'gemini-1.5-pro-latest' : 'gemini-1.5-flash-latest'
+    // Use the most stable and available model for both plans temporarily to fix 404s
+    const model = 'gemini-1.5-flash'
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
