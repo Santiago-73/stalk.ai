@@ -5,8 +5,8 @@ import { XMLParser } from 'fast-xml-parser'
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
 
 async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean = false): Promise<string> {
-    // Use the most stable and available model for both plans temporarily to fix 404s
-    const model = 'gemini-1.5-flash'
+    // Use current 2.x models since 1.5 is deprecated in 2026 and returns 404
+    const model = isPaid ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite'
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
