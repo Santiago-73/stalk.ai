@@ -73,7 +73,6 @@ export default async function DashboardPage() {
 
     const stats = [
         { label: 'Sources tracking', value: sourcesCount ?? 0, icon: <Radio size={20} />, color: '#7c3aed' },
-        { label: 'Total digests', value: digestsCount ?? 0, icon: <FileText size={20} />, color: '#10b981' },
         { label: 'Digests this week', value: digestsThisWeek ?? 0, icon: <TrendingUp size={20} />, color: '#f59e0b' },
         { label: 'Current Plan', value: (profile?.plan || 'free').toUpperCase(), icon: <Zap size={20} />, color: '#e879f9' },
     ]
@@ -94,7 +93,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 48 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 48 }}>
                 {stats.map((stat, i) => (
                     <div key={i} className="card" style={{ padding: 24 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
