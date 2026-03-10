@@ -72,8 +72,21 @@ async function fetchTikTok(url: string): Promise<string> {
     const handleMatch = url.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/)
     if (!handleMatch) throw new Error('Could not extract TikTok handle. Use format: tiktok.com/@username')
     const handle = handleMatch[1]
-    // Use RSSHub public instance to get TikTok feed as RSS
-    return fetchRSS(`https://rsshub.app/tiktok/user/@${handle}`)
+    const instances = [
+        'https://rsshub.app',
+        'https://rsshub.rss.plus',
+        'https://rss.fatpandac.me',
+    ]
+    let lastErr: unknown
+    for (const base of instances) {
+        try {
+            return await fetchRSS(`${base}/tiktok/user/@${handle}`)
+        } catch (err) {
+            console.warn(`[TikTok/subject] RSSHub instance ${base} failed:`, err)
+            lastErr = err
+        }
+    }
+    throw lastErr ?? new Error('All RSSHub instances failed for TikTok')
 }
 
 async function fetchTwitter(url: string): Promise<string> {

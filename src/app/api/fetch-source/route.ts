@@ -325,8 +325,22 @@ async function fetchTikTok(url: string): Promise<FetchResult> {
     const handleMatch = url.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/)
     if (!handleMatch) throw new Error('Could not extract TikTok handle. Use format: tiktok.com/@username')
     const handle = handleMatch[1]
-    // Route through RSSHub which converts TikTok profiles to RSS
-    return fetchRSS(`https://rsshub.app/tiktok/user/@${handle}`)
+    // Try multiple public RSSHub instances — public ones often block Vercel IPs
+    const instances = [
+        'https://rsshub.app',
+        'https://rsshub.rss.plus',
+        'https://rss.fatpandac.me',
+    ]
+    let lastErr: unknown
+    for (const base of instances) {
+        try {
+            return await fetchRSS(`${base}/tiktok/user/@${handle}`)
+        } catch (err) {
+            console.warn(`[TikTok] RSSHub instance ${base} failed:`, err)
+            lastErr = err
+        }
+    }
+    throw lastErr ?? new Error('All RSSHub instances failed for TikTok')
 }
 
 async function fetchHackerNews(url: string): Promise<FetchResult> {
