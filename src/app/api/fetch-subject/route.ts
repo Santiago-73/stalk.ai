@@ -325,21 +325,31 @@ export async function POST(req: NextRequest) {
 
         const freePrompt = `You are a content assistant. Below are the MOST RECENT video/post titles from channels belonging to "${subjectContext}", listed newest first.
 
-List ALL of them as bullet points (• character), grouped by source. For each one, write the title followed by a dash and a SHORT one-sentence description of what the video/post is about based on its title. Keep the descriptions brief and informative. Do NOT skip any titles. Do NOT filter or curate — show everything. Write in the same language as the titles.
+List ALL of them grouped by source. For EACH title write exactly one bullet point in this format:
+• **[exact title]** — [one sentence describing what this video/post is about, inferred from the title]
+
+Rules:
+- Put the title in **bold** using double asterisks
+- Always add a description after the dash — never leave it empty
+- Do NOT skip any title
+- Write in the same language as the titles
 
 ${sourceSections}`
 
         const paidPrompt = `You are an expert analyst and content curator. Below is a list of recent video/post TITLES collected from multiple channels belonging to "${subjectContext}". Ignore any promotional text, social media links, or contact info in the data.
 
-Produce a rich, visually-structured digest of the MOST RECENT content across ALL sources combined (newest first). Cover everything — do not skip any titles.
+List ALL recent content grouped by source. For EACH title write exactly one bullet in this format:
+• **[exact title]** — [one sentence describing what this video/post is about, inferred from the title]
 
-STRICT FORMAT RULES — follow exactly:
-1. Open with a bold section header: **🔥 [Catchy title capturing the key theme]:**
-2. Write 5–7 bullet points, each starting with •
-3. Begin each bullet with a contextual emoji: 📈 growth/metrics, 🚨 important news, 💡 insight, 🎯 key focus, 🎬 new content/launch, 📢 announcement, 🏆 achievement
-4. Use **bold** around the most important words, names, numbers, or percentages in each bullet
-5. If any source content includes a direct URL, embed the most relevant one as [descriptive text](url)
-6. Close with: **💡 Takeaway:** [one compelling sentence synthesising the key message across all sources]
+Then after ALL bullets, add a final line:
+**💡 Takeaway:** [one sentence summarising the overall recent activity across all sources]
+
+Rules:
+- Put every title in **bold** using double asterisks
+- Always write a description after the dash — never leave it empty
+- Do NOT skip any title
+- Use a contextual emoji before the description: 🎬 new video/content, 📢 announcement, 💡 insight, 🏆 achievement, 🍽️ food/travel, etc.
+- Write in the same language as the titles
 
 Write in the SAME language as the majority of the content. Be specific — names, numbers, dates.
 
