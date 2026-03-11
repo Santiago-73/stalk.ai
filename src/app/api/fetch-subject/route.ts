@@ -151,17 +151,43 @@ async function fetchTikTok(url: string): Promise<FetchedItem[]> {
         'https://rsshub.app',
         'https://rsshub.rss.plus',
         'https://rss.fatpandac.me',
+        'https://rsshub.ktachibana.party',
+        'https://hub.slarker.me',
     ]
     let lastErr: unknown
     for (const base of instances) {
         try {
             return await fetchRSS(`${base}/tiktok/user/@${handle}`)
         } catch (err) {
-            console.warn(`[TikTok/subject] RSSHub instance ${base} failed:`, err)
             lastErr = err
         }
     }
     throw lastErr ?? new Error('All RSSHub instances failed for TikTok')
+}
+
+async function fetchHackerNews(url: string): Promise<FetchedItem[]> {
+    // Support: news.ycombinator.com, or just "hackernews"
+    const listMatch = url.match(/\/(top|new|best|ask|show)/)
+    const type = listMatch ? listMatch[1] : 'top'
+    // Use official HN Firebase API — extremely reliable
+    const storiesRes = await fetch(
+        `https://hacker-news.firebaseio.com/v0/${type}stories.json`,
+        { signal: AbortSignal.timeout(8000) }
+    )
+    if (!storiesRes.ok) throw new Error('HackerNews API failed')
+    const ids: number[] = await storiesRes.json()
+    const top10 = ids.slice(0, 10)
+    const stories = await Promise.allSettled(
+        top10.map(id =>
+            fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { signal: AbortSignal.timeout(5000) })
+                .then(r => r.json())
+        )
+    )
+    return stories
+        .filter(r => r.status === 'fulfilled')
+        .map(r => (r as PromiseFulfilledResult<{ title?: string; score?: number; url?: string }>).value)
+        .filter(s => s?.title)
+        .map(s => ({ title: s.title!, desc: s.score ? `⬆️ ${s.score}` : '' }))
 }
 
 async function fetchTwitter(url: string): Promise<FetchedItem[]> {
@@ -233,6 +259,7 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
         case 'bluesky': return fetchBluesky(source.url)
         case 'substack': return fetchSubstack(source.url)
         case 'github': return fetchGitHub(source.url)
+        case 'hackernews': return fetchHackerNews(source.url)
         default: return fetchRSS(source.url)
     }
 }
