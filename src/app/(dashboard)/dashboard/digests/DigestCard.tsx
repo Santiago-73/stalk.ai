@@ -98,7 +98,10 @@ function parseInline(text: string, linkColor: string): React.ReactNode {
 /** Unified digest content renderer — handles plain bullets, rich Pro format, and legacy sections */
 function DigestContent({ content, accentColor }: { content: string; accentColor: string }) {
     const linkColor = '#a78bfa'
-    const lines = content.split('\n').filter(l => l.trim())
+    // Clean legacy HTML entities and control chars that may be stored in old digests
+    const cleaned = content
+        .replace(/&#13;/g, '').replace(/&#10;/g, ' ').replace(/&#\d+;/g, '').replace(/\r/g, '')
+    const lines = cleaned.split('\n').filter(l => l.trim())
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -127,12 +130,11 @@ function DigestContent({ content, accentColor }: { content: string; accentColor:
                     const header = t.replace(/^\*\*/, '').replace(/\*\*:?$/, '').replace(/:$/, '').trim()
                     return (
                         <div key={i} style={{
-                            fontSize: 12, fontWeight: 800, color: 'var(--text-muted)',
-                            textTransform: 'uppercase', letterSpacing: '0.06em',
-                            borderBottom: '1px solid var(--border)', paddingBottom: 6,
-                            marginTop: i > 0 ? 6 : 0
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            marginTop: i > 0 ? 8 : 0, marginBottom: 2
                         }}>
-                            {header}
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>{header}</span>
+                            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                         </div>
                     )
                 }
@@ -141,12 +143,12 @@ function DigestContent({ content, accentColor }: { content: string; accentColor:
                 if (t.startsWith('•') || t.startsWith('-')) {
                     const text = t.replace(/^[•\-]\s*/, '')
                     return (
-                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                             <div style={{
-                                width: 5, height: 5, borderRadius: '50%', marginTop: 9, flexShrink: 0,
-                                background: accentColor
+                                width: 6, height: 6, borderRadius: '50%', marginTop: 8, flexShrink: 0,
+                                background: accentColor, boxShadow: `0 0 6px ${accentColor}80`
                             }} />
-                            <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                            <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                                 {parseInline(text, linkColor)}
                             </span>
                         </div>
@@ -155,7 +157,7 @@ function DigestContent({ content, accentColor }: { content: string; accentColor:
 
                 // Plain text / paragraph
                 return (
-                    <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    <p key={i} style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
                         {parseInline(t, linkColor)}
                     </p>
                 )
@@ -364,14 +366,28 @@ export default function DigestCard({ digest }: { digest: Digest }) {
                             animation: 'digestCardIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
                         }}
                     >
-                        <div style={{ height: 4, background: col.gradient, width: '100%', flexShrink: 0 }} />
-                        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+                        <div style={{ height: 5, background: col.gradient, width: '100%', flexShrink: 0 }} />
+                        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 18, overflowY: 'auto' }}>
                             {cardHeader}
-                            <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                                {digest.source_name}
-                            </h3>
-                            {thumbnails.length > 0 && <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />}
                             <div>
+                                <h3 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                                    {digest.source_name}
+                                </h3>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                    <span style={{
+                                        fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+                                        background: `${col.color}18`, color: col.color,
+                                        border: `1px solid ${col.color}40`
+                                    }}>
+                                        {digest.source_type.charAt(0).toUpperCase() + digest.source_type.slice(1)}
+                                    </span>
+                                </div>
+                            </div>
+                            {thumbnails.length > 0 && <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />}
+                            <div style={{
+                                background: 'rgba(255,255,255,0.02)', borderRadius: 12,
+                                padding: '16px', border: '1px solid var(--border)'
+                            }}>
                                 <DigestContent content={digest.content} accentColor={col.gradient} />
                             </div>
                         </div>
