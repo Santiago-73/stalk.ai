@@ -130,7 +130,7 @@ async function fetchReddit(url: string): Promise<FetchedItem[]> {
     const headers: Record<string, string> = { 'User-Agent': 'stalk-ai/1.0 by sanespi012' }
     if (token) headers['Authorization'] = `Bearer ${token}`
 
-    const res = await fetch(`${apiBase}/r/${subreddit}/hot.json?limit=12`, {
+    const res = await fetch(`${apiBase}/r/${subreddit}/new.json?limit=12`, {
         headers, signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) throw new Error(`Reddit API returned ${res.status} for r/${subreddit}`)
@@ -185,8 +185,8 @@ async function fetchTwitter(url: string): Promise<FetchedItem[]> {
     if (!tweetsRes.ok) throw new Error('Failed to fetch tweets')
     const tweets = (await tweetsRes.json())?.data || []
     return tweets.slice(0, 8).map((t: { text?: string; public_metrics?: { like_count?: number } }) => ({
-        title: t.text?.replace(/\n/g, ' ').slice(0, 300) || 'Tweet',
-        desc: `❤️ ${t.public_metrics?.like_count || 0}`,
+        title: t.text?.replace(/\n/g, ' ').slice(0, 280) || 'Tweet',
+        desc: '',
     }))
 }
 
@@ -203,8 +203,8 @@ async function fetchBluesky(url: string): Promise<FetchedItem[]> {
     if (!feedRes.ok) throw new Error('Failed to fetch Bluesky posts')
     const posts = (await feedRes.json())?.feed || []
     return posts.slice(0, 8).map((item: { post?: { record?: { text?: string }; likeCount?: number } }) => ({
-        title: item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 300) || 'Post',
-        desc: `❤️ ${item.post?.likeCount || 0}`,
+        title: item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 280) || 'Post',
+        desc: '',
     }))
 }
 
