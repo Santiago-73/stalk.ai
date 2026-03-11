@@ -49,7 +49,7 @@ async function fetchRSS(url: string, isYouTube = false): Promise<FetchedItem[]> 
     const parsed = parser.parse(await res.text())
     const channel = parsed?.rss?.channel ?? parsed?.feed ?? {}
     const rawItems: RSSItem[] = channel.item ?? channel.entry ?? []
-    const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 10)
+    const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 4)
     return items.map(item => {
         const title = decodeEntities(item.title ?? '')
         const rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
@@ -130,14 +130,14 @@ async function fetchReddit(url: string): Promise<FetchedItem[]> {
     const headers: Record<string, string> = { 'User-Agent': 'stalk-ai/1.0 by sanespi012' }
     if (token) headers['Authorization'] = `Bearer ${token}`
 
-    const res = await fetch(`${apiBase}/r/${subreddit}/new.json?limit=12`, {
+    const res = await fetch(`${apiBase}/r/${subreddit}/new.json?limit=4`, {
         headers, signal: AbortSignal.timeout(10000),
     })
     if (!res.ok) throw new Error(`Reddit API returned ${res.status} for r/${subreddit}`)
 
     const data = await res.json()
     const posts: any[] = data.data?.children || []
-    return posts.slice(0, 10).map((p: any) => ({
+    return posts.slice(0, 4).map((p: any) => ({
         title: p.data.title,
         desc: `Score: ${p.data.score}`,
     }))
@@ -176,7 +176,7 @@ async function fetchHackerNews(url: string): Promise<FetchedItem[]> {
     )
     if (!storiesRes.ok) throw new Error('HackerNews API failed')
     const ids: number[] = await storiesRes.json()
-    const top10 = ids.slice(0, 10)
+    const top10 = ids.slice(0, 4)
     const stories = await Promise.allSettled(
         top10.map(id =>
             fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { signal: AbortSignal.timeout(5000) })
@@ -205,12 +205,12 @@ async function fetchTwitter(url: string): Promise<FetchedItem[]> {
     const userId = (await userRes.json())?.data?.id
     if (!userId) throw new Error('Could not find Twitter user')
     const tweetsRes = await fetch(
-        `https://api.twitter.com/2/users/${userId}/tweets?max_results=10&tweet.fields=created_at,public_metrics`,
+        `https://api.twitter.com/2/users/${userId}/tweets?max_results=5&tweet.fields=created_at,public_metrics`,
         { headers: { Authorization: `Bearer ${bearerToken}` }, signal: AbortSignal.timeout(10000) }
     )
     if (!tweetsRes.ok) throw new Error('Failed to fetch tweets')
     const tweets = (await tweetsRes.json())?.data || []
-    return tweets.slice(0, 8).map((t: { text?: string; public_metrics?: { like_count?: number } }) => ({
+    return tweets.slice(0, 4).map((t: { text?: string; public_metrics?: { like_count?: number } }) => ({
         title: t.text?.replace(/\n/g, ' ').slice(0, 280) || 'Tweet',
         desc: '',
     }))
@@ -225,10 +225,10 @@ async function fetchBluesky(url: string): Promise<FetchedItem[]> {
     if (!profileRes.ok) throw new Error('Bluesky handle not found')
     const did = (await profileRes.json())?.did
     if (!did) throw new Error('Could not find Bluesky user DID')
-    const feedRes = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}&limit=10`, { signal: AbortSignal.timeout(10000) })
+    const feedRes = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}&limit=4`, { signal: AbortSignal.timeout(10000) })
     if (!feedRes.ok) throw new Error('Failed to fetch Bluesky posts')
     const posts = (await feedRes.json())?.feed || []
-    return posts.slice(0, 8).map((item: { post?: { record?: { text?: string }; likeCount?: number } }) => ({
+    return posts.slice(0, 4).map((item: { post?: { record?: { text?: string }; likeCount?: number } }) => ({
         title: item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 280) || 'Post',
         desc: '',
     }))
@@ -279,7 +279,7 @@ async function fetchTwitch(url: string): Promise<FetchedItem[]> {
     if (!userId) throw new Error('Could not find Twitch user')
     // Get recent videos
     const videosRes = await fetch(
-        `https://api.twitch.tv/helix/videos?user_id=${userId}&type=archive&first=10`,
+        `https://api.twitch.tv/helix/videos?user_id=${userId}&type=archive&first=4`,
         { headers, signal: AbortSignal.timeout(8000) }
     )
     if (!videosRes.ok) throw new Error('Failed to fetch Twitch videos')
@@ -295,12 +295,12 @@ async function fetchDevTo(url: string): Promise<FetchedItem[]> {
     if (!handleMatch) throw new Error('Could not extract Dev.to username')
     const username = handleMatch[1]
     const res = await fetch(
-        `https://dev.to/api/articles?username=${username}&per_page=10`,
+        `https://dev.to/api/articles?username=${username}&per_page=4`,
         { headers: { 'User-Agent': 'stalk-ai/1.0' }, signal: AbortSignal.timeout(10000) }
     )
     if (!res.ok) throw new Error(`Dev.to API returned ${res.status}`)
     const articles = await res.json()
-    return articles.slice(0, 10).map((a: { title?: string; positive_reactions_count?: number }) => ({
+    return articles.slice(0, 4).map((a: { title?: string; positive_reactions_count?: number }) => ({
         title: a.title || 'Article',
         desc: a.positive_reactions_count ? `❤️ ${a.positive_reactions_count}` : '',
     }))
