@@ -240,7 +240,7 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
 // ── Gemini ───────────────────────────────────────────────────────────────────
 
 async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean): Promise<string> {
-    const model = isPaid ? 'gemini-2.5-flash' : 'gemini-2.0-flash-lite'
+    const model = isPaid ? 'gemini-2.5-flash' : 'gemini-2.0-flash'
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
@@ -321,9 +321,8 @@ export async function POST(req: NextRequest) {
         const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
         const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
 
-        const apiKey = isPaid
-            ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
-            : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
+        // Both tiers use the paid key — free uses gemini-2.0-flash, pro uses gemini-2.5-flash
+        const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY
 
         // Collect all titles (clean, no desc mixed in)
         const allItems: { title: string; sourceName: string }[] = []
