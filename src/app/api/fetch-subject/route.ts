@@ -20,7 +20,19 @@ interface RSSItem {
     'media:group'?: { 'media:description'?: string }
 }
 
-async function fetchRSS(url: string): Promise<string> {
+function cleanDescription(raw: unknown, isYouTube = false): string {
+    if (isYouTube) return '' // YouTube descriptions are always promotional spam
+    let text = typeof raw === 'object' && raw !== null
+        ? String((raw as Record<string, unknown>)['#text'] ?? '')
+        : String(raw ?? '')
+    text = decodeEntities(text.replace(/<[^>]*>/g, '')).replace(/\r/g, '').replace(/\s+/g, ' ').trim()
+    // Strip at the first URL, social media promo line, or arrow separator
+    text = text.split(/https?:\/\//)[0]
+    text = text.split(/→|Sígueme|Follow me|Subscribe|Suscríbete|Contact|Twitter|Instagram|TikTok/i)[0]
+    return text.trim().slice(0, 200)
+}
+
+async function fetchRSS(url: string, isYouTube = false): Promise<string> {
     const res = await fetch(url, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -35,10 +47,9 @@ async function fetchRSS(url: string): Promise<string> {
     const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 8)
     return items.map(item => {
         const title = decodeEntities(item.title ?? '')
-        let rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
-        if (typeof rawDesc === 'object' && rawDesc !== null) rawDesc = String((rawDesc as Record<string, unknown>)['#text'] ?? '')
-        const clean = decodeEntities(String(rawDesc).replace(/<[^>]*>/g, '')).replace(/\r/g, '').replace(/\s+/g, ' ').trim().slice(0, 400)
-        return `• ${title}: ${clean}`
+        const rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
+        const desc = cleanDescription(rawDesc, isYouTube)
+        return desc ? `• ${title}: ${desc}` : `• ${title}`
     }).join('\n')
 }
 
@@ -49,11 +60,11 @@ async function fetchYouTube(url: string): Promise<string> {
 
 
     if (channelMatch) {
-        return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`)
+        return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`, true)
     }
 
     if (userMatch) {
-        try { return await fetchRSS(`https://www.youtube.com/feeds/videos.xml?user=${userMatch[1]}`) }
+        try { return await fetchRSS(`https://www.youtube.com/feeds/videos.xml?user=${userMatch[1]}`, true) }
         catch { /* fall through to page scraping */ }
     }
 
@@ -74,7 +85,7 @@ async function fetchYouTube(url: string): Promise<string> {
             html.match(/"browseId":"(UC[A-Za-z0-9_-]+)"/) ||
             html.match(/channel_id=(UC[A-Za-z0-9_-]+)/)
         if (!idMatch) throw new Error('Could not find YouTube channel ID — try using the direct channel URL (youtube.com/channel/UC...)')
-        return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${idMatch[1]}`)
+        return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${idMatch[1]}`, true)
     }
 
     throw new Error('Unrecognised YouTube URL format')
@@ -312,9 +323,13 @@ export async function POST(req: NextRequest) {
         const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
         const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
 
-        const freePrompt = `You are an expert analyst. Below is recent content from multiple channels belonging to "${subjectContext}". Write a unified digest of the most important information about ${typedSubject.name}. Use 5–7 bullet points (• character). Be concise. Write in the same language as the majority of the content.\n\n${sourceSections}`
+        const freePrompt = `You are an expert analyst. Below is a list of recent video/post TITLES from multiple channels belonging to "${subjectContext}".
 
-        const paidPrompt = `You are an expert analyst and content curator. Below is recent content collected from multiple social media channels and feeds belonging to "${subjectContext}".
+Write a unified digest summarizing what ${typedSubject.name} has been publishing recently. For each notable piece of content, write one bullet (• character) with: the video/post title and a SHORT one-line summary of what it's likely about based on the title. Do NOT copy promotional text, social media links, or contact info. Use 5–7 bullets. Write in the same language as the titles.
+
+${sourceSections}`
+
+        const paidPrompt = `You are an expert analyst and content curator. Below is a list of recent video/post TITLES collected from multiple channels belonging to "${subjectContext}". Ignore any promotional text, social media links, or contact info in the data.
 
 Produce a rich, visually-structured intelligence digest covering ALL sources combined.
 
