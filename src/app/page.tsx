@@ -154,7 +154,7 @@ export default function HomePage() {
 
                 {/* Mini digest preview */}
                 <div style={{ marginTop: 14, padding: '14px 16px', borderRadius: 10, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                  <div style={{ display: 'flex', justify: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-bright)' }}>✨ AI Digest — Tech News</span>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>just now</span>
                   </div>
