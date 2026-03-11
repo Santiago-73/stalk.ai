@@ -1,20 +1,39 @@
 import { createClient } from '@/lib/supabase/server'
-import { Plus, Radio, FileText, TrendingUp, Zap, Youtube, MessageSquare, Rss, Clock } from 'lucide-react'
+import { Plus, TrendingUp, Zap, BookOpen, FileText, ArrowRight, Layers, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
-const typeIcon: Record<string, React.ReactNode> = {
-    youtube: <Youtube size={14} />,
-    reddit: <MessageSquare size={14} />,
-    bluesky: <span style={{ fontWeight: 800, fontSize: 11, letterSpacing: '-0.5px' }}>Bs</span>,
-    hackernews: <span style={{ fontWeight: 800, fontSize: 11, background: '#ff6600', color: '#fff', padding: '0 2px' }}>Y</span>,
-    rss: <Rss size={14} />,
-}
 const typeColor: Record<string, string> = {
     youtube: '#ff4444',
     reddit: '#ff6314',
     bluesky: '#0285FF',
     hackernews: '#ff6600',
     rss: '#10b981',
+    tiktok: '#000000',
+    substack: '#ff6719',
+    github: '#e2e8f0',
+    twitter: '#1d9bf0',
+}
+
+const typeLabel: Record<string, string> = {
+    youtube: 'YouTube',
+    reddit: 'Reddit',
+    bluesky: 'Bluesky',
+    hackernews: 'HN',
+    rss: 'RSS',
+    tiktok: 'TikTok',
+    substack: 'Substack',
+    github: 'GitHub',
+    twitter: 'Twitter/X',
+}
+
+interface Subject {
+    id: string
+    name: string
+    description: string | null
+    created_at: string
+    source_count: number
+    source_types: string[]
+    last_digest_at: string | null
 }
 
 function timeAgo(date: string) {
@@ -27,75 +46,75 @@ function timeAgo(date: string) {
     return `${Math.floor(h / 24)}d ago`
 }
 
-interface Digest {
-    id: string
-    source_name: string
-    source_type: string
-    content: string
-    created_at: string
-}
-
 export default async function DashboardPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // 1. Get profile plan
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('plan')
-        .eq('id', user?.id ?? '')
-        .single()
+    const [
+        { data: profile },
+        { data: subjectsRaw, count: subjectsCount },
+        { count: digestsThisWeek },
+        { count: totalDigests },
+    ] = await Promise.all([
+        supabase.from('profiles').select('plan').eq('id', user?.id ?? '').single(),
+        supabase.from('subjects').select('id, name, description, created_at', { count: 'exact' })
+            .eq('user_id', user?.id ?? '').order('created_at', { ascending: false }).limit(6),
+        supabase.from('digests').select('*', { count: 'exact', head: true })
+            .eq('user_id', user?.id ?? '')
+            .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
+        supabase.from('digests').select('*', { count: 'exact', head: true })
+            .eq('user_id', user?.id ?? ''),
+    ])
 
-    // 2. Get total sources
-    const { count: sourcesCount } = await supabase
-        .from('sources')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id ?? '')
+    // Enrich subjects with source counts and last digest
+    const subjects: Subject[] = await Promise.all(
+        (subjectsRaw ?? []).map(async (s) => {
+            const [{ data: sources }, { data: lastDigest }] = await Promise.all([
+                supabase.from('sources').select('type').eq('subject_id', s.id),
+                supabase.from('digests').select('created_at').eq('subject_id', s.id)
+                    .order('created_at', { ascending: false }).limit(1),
+            ])
+            return {
+                ...s,
+                source_count: sources?.length ?? 0,
+                source_types: [...new Set((sources ?? []).map((src) => src.type))],
+                last_digest_at: lastDigest?.[0]?.created_at ?? null,
+            }
+        })
+    )
 
-    // 3. Get total digests and latest 10
-    const { data: digestsRaw, count: digestsCount } = await supabase
-        .from('digests')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user?.id ?? '')
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-    // 4. Get digests this week
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-    const { count: digestsThisWeek } = await supabase
-        .from('digests')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id ?? '')
-        .gte('created_at', oneWeekAgo.toISOString())
-
-    const digests: Digest[] = (digestsRaw ?? []) as Digest[]
-
-    const stats = [
-        { label: 'Sources tracking', value: sourcesCount ?? 0, icon: <Radio size={20} />, color: '#7c3aed' },
-        { label: 'Digests this week', value: digestsThisWeek ?? 0, icon: <TrendingUp size={20} />, color: '#f59e0b' },
-        { label: 'Current Plan', value: (profile?.plan || 'free').toUpperCase(), icon: <Zap size={20} />, color: '#e879f9' },
-    ]
+    const plan = profile?.plan || 'free'
+    const isPro = plan === 'pro' || plan === 'ultra'
+    const username = user?.email?.split('@')[0] ?? ''
 
     return (
         <div>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 36 }}>
                 <div>
-                    <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>Dashboard</h1>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>
+                        Hey, {username} 👋
+                    </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
-                        Welcome back{user?.email ? `, ${user.email.split('@')[0]}` : ''}! Here&apos;s what&apos;s happening.
+                        {(subjectsCount ?? 0) === 0
+                            ? "Let's get you set up — create your first subject below."
+                            : `You're tracking ${subjectsCount} subject${(subjectsCount ?? 0) !== 1 ? 's' : ''}. ${(digestsThisWeek ?? 0) > 0 ? `${digestsThisWeek} digest${(digestsThisWeek ?? 0) !== 1 ? 's' : ''} generated this week.` : 'Generate a digest to catch up.'}`
+                        }
                     </p>
                 </div>
-                <Link href="/dashboard/sources" className="btn-primary">
-                    <Plus size={16} /> Add source
+                <Link href="/dashboard/subjects" className="btn-primary">
+                    <Plus size={16} /> New subject
                 </Link>
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 48 }}>
-                {stats.map((stat, i) => (
-                    <div key={i} className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 36 }}>
+                {[
+                    { label: 'Subjects', value: subjectsCount ?? 0, icon: <Layers size={20} />, color: '#7c3aed', href: '/dashboard/subjects' },
+                    { label: 'Digests this week', value: digestsThisWeek ?? 0, icon: <TrendingUp size={20} />, color: '#f59e0b', href: '/dashboard/digests' },
+                    { label: 'Current plan', value: plan.toUpperCase(), icon: <Zap size={20} />, color: '#e879f9', href: isPro ? undefined : 'https://stalk-ai.com/#pricing' },
+                ].map((stat, i) => (
+                    <div key={i} className="card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                             <div style={{
                                 width: 40, height: 40, borderRadius: 10,
@@ -105,6 +124,11 @@ export default async function DashboardPage() {
                             }}>
                                 {stat.icon}
                             </div>
+                            {stat.href && (
+                                <Link href={stat.href} style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                                    <ArrowRight size={14} />
+                                </Link>
+                            )}
                         </div>
                         <div style={{ fontSize: 32, fontWeight: 800, marginBottom: 4 }}>{stat.value}</div>
                         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{stat.label}</div>
@@ -112,98 +136,168 @@ export default async function DashboardPage() {
                 ))}
             </div>
 
-            {/* Digest feed or empty states */}
-            {(sourcesCount ?? 0) === 0 ? (
+            {/* Quick actions */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 36 }}>
+                <Link href="/dashboard/subjects" style={{ textDecoration: 'none' }}>
+                    <div className="card" style={{
+                        padding: 24, cursor: 'pointer', transition: 'border-color 0.15s',
+                        background: 'linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(232,121,249,0.05) 100%)',
+                        border: '1px solid rgba(124,58,237,0.25)',
+                        borderRadius: 14, display: 'flex', alignItems: 'center', gap: 20
+                    }}>
+                        <div style={{
+                            width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                            background: 'linear-gradient(135deg, #7c3aed, #e879f9)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <BookOpen size={24} color="white" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>My Subjects</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                                Manage topics and generate digests
+                            </div>
+                        </div>
+                        <ArrowRight size={18} color="var(--text-muted)" />
+                    </div>
+                </Link>
+
+                <Link href="/dashboard/digests" style={{ textDecoration: 'none' }}>
+                    <div className="card" style={{
+                        padding: 24, cursor: 'pointer', transition: 'border-color 0.15s',
+                        background: 'linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(16,185,129,0.05) 100%)',
+                        border: '1px solid rgba(245,158,11,0.25)',
+                        borderRadius: 14, display: 'flex', alignItems: 'center', gap: 20
+                    }}>
+                        <div style={{
+                            width: 52, height: 52, borderRadius: 14, flexShrink: 0,
+                            background: 'linear-gradient(135deg, #f59e0b, #10b981)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <FileText size={24} color="white" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>All Digests</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                                {(totalDigests ?? 0) > 0 ? `${totalDigests} digest${(totalDigests ?? 0) !== 1 ? 's' : ''} generated total` : 'Browse your AI summaries'}
+                            </div>
+                        </div>
+                        <ArrowRight size={18} color="var(--text-muted)" />
+                    </div>
+                </Link>
+            </div>
+
+            {/* Subjects preview or empty state */}
+            {(subjectsCount ?? 0) === 0 ? (
                 <div style={{
-                    textAlign: 'center', padding: '80px 40px',
+                    textAlign: 'center', padding: '64px 40px',
                     background: 'var(--bg-card)', border: '1px dashed var(--border-bright)',
                     borderRadius: 16
                 }}>
                     <div style={{
-                        width: 72, height: 72, borderRadius: 18, margin: '0 auto 24px',
-                        background: 'rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        width: 72, height: 72, borderRadius: 20, margin: '0 auto 24px',
+                        background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(232,121,249,0.15))',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                        <Radio size={36} color="var(--accent)" />
+                        <Sparkles size={32} color="var(--accent-bright)" />
                     </div>
-                    <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>No sources yet</h2>
-                    <p style={{ color: 'var(--text-secondary)', maxWidth: 400, margin: '0 auto 28px', lineHeight: 1.7 }}>
-                        Add your first source to start tracking YouTube channels, Reddit communities, or RSS feeds.
+                    <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Create your first subject</h2>
+                    <p style={{ color: 'var(--text-secondary)', maxWidth: 420, margin: '0 auto 28px', lineHeight: 1.7, fontSize: 14 }}>
+                        A subject is a topic you want to track — add sources like YouTube channels, RSS feeds, or Bluesky accounts and get AI-powered digests.
                     </p>
-                    <Link href="/dashboard/sources" className="btn-primary" style={{ fontSize: 16, padding: '12px 28px' }}>
-                        <Plus size={16} /> Add your first source
-                    </Link>
-                </div>
-            ) : digests.length === 0 ? (
-                <div style={{
-                    textAlign: 'center', padding: '60px 40px',
-                    background: 'var(--bg-card)', border: '1px dashed var(--border-bright)',
-                    borderRadius: 16
-                }}>
-                    <div style={{
-                        width: 64, height: 64, borderRadius: 16, margin: '0 auto 20px',
-                        background: 'rgba(16,185,129,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}>
-                        <FileText size={30} color="#10b981" />
-                    </div>
-                    <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>No digests yet</h2>
-                    <p style={{ color: 'var(--text-secondary)', maxWidth: 380, margin: '0 auto 24px', lineHeight: 1.6, fontSize: 14 }}>
-                        You have sources set up — go to Sources and click <strong style={{ color: 'var(--text-primary)' }}>&ldquo;Generate digest&rdquo;</strong> on any of them.
-                    </p>
-                    <Link href="/dashboard/sources" className="btn-primary" style={{ fontSize: 15, padding: '10px 24px' }}>
-                        Go to Sources →
+                    <Link href="/dashboard/subjects" className="btn-primary" style={{ fontSize: 15, padding: '12px 28px' }}>
+                        <Plus size={16} /> Create subject
                     </Link>
                 </div>
             ) : (
                 <div>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Recent digests</h2>
-                    <div style={{ display: 'grid', gap: 16 }}>
-                        {digests.map(digest => {
-                            const color = typeColor[digest.source_type] ?? '#7c3aed'
-                            const icon = typeIcon[digest.source_type] ?? <FileText size={14} />
-                            // Parse bullet points
-                            const bullets = digest.content
-                                .split('\n')
-                                .map(l => l.trim())
-                                .filter(l => l.startsWith('•') || l.startsWith('-') || l.startsWith('*'))
-                                .map(l => l.replace(/^[•\-*]\s*/, ''))
-                            return (
-                                <div key={digest.id} className="card" style={{ padding: '20px 24px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                            <div style={{
-                                                width: 32, height: 32, borderRadius: 8,
-                                                background: `${color}22`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color
-                                            }}>
-                                                {icon}
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 700, fontSize: 14 }}>{digest.source_name}</div>
-                                                <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{digest.source_type}</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 12 }}>
-                                            <Clock size={12} />
-                                            {timeAgo(digest.created_at)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                        <h2 style={{ fontSize: 17, fontWeight: 700 }}>Your subjects</h2>
+                        <Link href="/dashboard/subjects" style={{ color: 'var(--accent-bright)', fontSize: 13, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            View all <ArrowRight size={13} />
+                        </Link>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+                        {subjects.map((subject) => (
+                            <Link key={subject.id} href={`/dashboard/subjects/${subject.id}`} style={{ textDecoration: 'none' }}>
+                                <div className="card" style={{
+                                    padding: 20, borderRadius: 12, cursor: 'pointer',
+                                    transition: 'border-color 0.15s',
+                                    height: '100%', boxSizing: 'border-box',
+                                    display: 'flex', flexDirection: 'column', gap: 12
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                        <h3 style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.3, flex: 1, paddingRight: 8 }}>
+                                            {subject.name}
+                                        </h3>
+                                        <div style={{
+                                            background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)',
+                                            borderRadius: 6, padding: '2px 8px', fontSize: 11, color: 'var(--accent-bright)',
+                                            fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0
+                                        }}>
+                                            {subject.source_count} source{subject.source_count !== 1 ? 's' : ''}
                                         </div>
                                     </div>
-                                    {bullets.length > 0 ? (
-                                        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 8 }}>
-                                            {bullets.map((bullet, i) => (
-                                                <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                                                    <span style={{ color, marginTop: 1, flexShrink: 0 }}>•</span>
-                                                    <span>{bullet}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p style={{ fontSize: 14, color: 'var(--text-secondary)', whiteSpace: 'pre-line', margin: 0 }}>{digest.content}</p>
+
+                                    {subject.description && (
+                                        <p style={{
+                                            color: 'var(--text-muted)', fontSize: 13, margin: 0,
+                                            lineHeight: 1.5, flex: 1,
+                                            overflow: 'hidden', display: '-webkit-box',
+                                            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                                        }}>
+                                            {subject.description}
+                                        </p>
                                     )}
+
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                                        {/* Source type dots */}
+                                        <div style={{ display: 'flex', gap: 5 }}>
+                                            {subject.source_types.slice(0, 5).map((type) => (
+                                                <div key={type} title={typeLabel[type] ?? type} style={{
+                                                    width: 8, height: 8, borderRadius: '50%',
+                                                    background: typeColor[type] ?? '#7c3aed',
+                                                    flexShrink: 0
+                                                }} />
+                                            ))}
+                                        </div>
+                                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                            {subject.last_digest_at
+                                                ? `digest ${timeAgo(subject.last_digest_at)}`
+                                                : 'no digests yet'}
+                                        </span>
+                                    </div>
                                 </div>
-                            )
-                        })}
+                            </Link>
+                        ))}
                     </div>
+                </div>
+            )}
+
+            {/* Upgrade CTA for free users */}
+            {!isPro && (subjectsCount ?? 0) > 0 && (
+                <div style={{
+                    marginTop: 32, borderRadius: 14, padding: '24px 28px',
+                    background: 'linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(232,121,249,0.08) 100%)',
+                    border: '1px solid rgba(124,58,237,0.25)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20
+                }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                            <Zap size={16} color="#e879f9" />
+                            <span style={{ fontWeight: 700, fontSize: 15 }}>Upgrade to Pro</span>
+                        </div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
+                            Unlock Reddit, TikTok, Substack, GitHub tracking + up to 50 subjects + richer AI digests.
+                        </p>
+                    </div>
+                    <Link href="https://stalk-ai.com/#pricing" style={{
+                        background: 'linear-gradient(135deg, #7c3aed, #e879f9)',
+                        color: 'white', borderRadius: 8, padding: '10px 20px',
+                        fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0
+                    }}>
+                        See plans →
+                    </Link>
                 </div>
             )}
         </div>
