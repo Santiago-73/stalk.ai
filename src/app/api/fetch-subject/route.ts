@@ -269,10 +269,7 @@ async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
         }
         const json = await res.json()
         const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-        if (text) {
-            console.error('[fetch-subject] Using model:', model)
-            return text
-        }
+        if (text) return text
     }
     throw new Error(`No working Gemini model found. Last error: ${lastError}`)
 }
@@ -338,14 +335,10 @@ export async function POST(req: NextRequest) {
             : typedSubject.name
 
         // Get user plan
-        const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-        const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
-
-        // Use paid key (Nivel 1) — gemini-2.0-flash requires billing
+        // Use paid key (Nivel 1) with gemini-2.5-flash
         const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID
             || process.env.GOOGLE_GEMINI_API_KEY
             || process.env.GOOGLE_GEMINI_API_KEY_FREE
-        console.error('[fetch-subject] apiKey available:', !!apiKey, '| isPaid:', isPaid)
 
         // Collect all titles (clean, no desc mixed in)
         const allItems: { title: string; sourceName: string }[] = []
@@ -363,13 +356,10 @@ export async function POST(req: NextRequest) {
         try {
             if (apiKey) {
                 const raw = await geminiGenerate(descPrompt, apiKey)
-                console.error('[fetch-subject] Gemini raw:', raw.slice(0, 300))
-                // Only keep lines that start with a number — ignores any intro/outro text
                 descriptions = raw.split('\n')
                     .filter(l => /^\d+[\.\)]\s/.test(l.trim()))
                     .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
                     .filter(l => l.length > 0)
-                console.error('[fetch-subject] descriptions:', descriptions.length, '/ titles:', allItems.length)
             }
         } catch (err) {
             console.error('[fetch-subject] Gemini descriptions error:', err)
