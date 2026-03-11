@@ -44,7 +44,7 @@ async function fetchRSS(url: string, isYouTube = false): Promise<string> {
     const parsed = parser.parse(await res.text())
     const channel = parsed?.rss?.channel ?? parsed?.feed ?? {}
     const rawItems: RSSItem[] = channel.item ?? channel.entry ?? []
-    const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 8)
+    const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 10)
     return items.map(item => {
         const title = decodeEntities(item.title ?? '')
         const rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
@@ -323,15 +323,15 @@ export async function POST(req: NextRequest) {
         const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
         const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
 
-        const freePrompt = `You are an expert analyst. Below is a list of recent video/post TITLES from multiple channels belonging to "${subjectContext}".
+        const freePrompt = `You are a content assistant. Below are the MOST RECENT video/post titles from channels belonging to "${subjectContext}", listed newest first.
 
-Write a unified digest summarizing what ${typedSubject.name} has been publishing recently. For each notable piece of content, write one bullet (• character) with: the video/post title and a SHORT one-line summary of what it's likely about based on the title. Do NOT copy promotional text, social media links, or contact info. Use 5–7 bullets. Write in the same language as the titles.
+List ALL of them as bullet points (• character), grouped by source. For each one, write the title followed by a dash and a SHORT one-sentence description of what the video/post is about based on its title. Keep the descriptions brief and informative. Do NOT skip any titles. Do NOT filter or curate — show everything. Write in the same language as the titles.
 
 ${sourceSections}`
 
         const paidPrompt = `You are an expert analyst and content curator. Below is a list of recent video/post TITLES collected from multiple channels belonging to "${subjectContext}". Ignore any promotional text, social media links, or contact info in the data.
 
-Produce a rich, visually-structured intelligence digest covering ALL sources combined.
+Produce a rich, visually-structured digest of the MOST RECENT content across ALL sources combined (newest first). Cover everything — do not skip any titles.
 
 STRICT FORMAT RULES — follow exactly:
 1. Open with a bold section header: **🔥 [Catchy title capturing the key theme]:**
