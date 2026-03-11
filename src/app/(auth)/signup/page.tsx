@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Sparkles, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { signup } from '../actions'
 
@@ -9,6 +9,8 @@ export default function SignupPage() {
     const [showPass, setShowPass] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [emailSent, setEmailSent] = useState(false)
+    const [sentTo, setSentTo] = useState('')
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -19,7 +21,45 @@ export default function SignupPage() {
         if (result?.error) {
             setError(result.error)
             setLoading(false)
+        } else if (result?.requiresConfirmation) {
+            setSentTo(formData.get('email') as string)
+            setEmailSent(true)
         }
+    }
+
+    if (emailSent) {
+        return (
+            <div style={{
+                minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'var(--bg-primary)', padding: 20,
+                backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.12) 0%, transparent 60%)'
+            }}>
+                <div style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
+                    <div style={{
+                        width: 72, height: 72, borderRadius: 20, margin: '0 auto 24px',
+                        background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <Mail size={32} color="var(--accent-bright)" />
+                    </div>
+                    <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>Check your email</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: 15, lineHeight: 1.7, marginBottom: 8 }}>
+                        We sent a confirmation link to
+                    </p>
+                    <p style={{
+                        color: 'var(--accent-bright)', fontWeight: 700, fontSize: 15, marginBottom: 24,
+                        background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)',
+                        borderRadius: 8, padding: '8px 16px', display: 'inline-block'
+                    }}>
+                        {sentTo}
+                    </p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.6 }}>
+                        Click the link in the email to activate your account and start using Stalk.ai.
+                        Check your spam folder if you don&apos;t see it.
+                    </p>
+                </div>
+            </div>
+        )
     }
 
     return (

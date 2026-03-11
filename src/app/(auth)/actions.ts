@@ -25,17 +25,27 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
     const supabase = await createClient()
 
-    const data = {
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
-    }
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
-    const { error } = await supabase.auth.signUp(data)
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            emailRedirectTo: 'https://www.stalk-ai.com/dashboard',
+        },
+    })
 
     if (error) {
         return { error: error.message }
     }
 
+    // If email confirmation is required, the session will be null
+    if (!data.session) {
+        return { success: true, requiresConfirmation: true }
+    }
+
+    // Email confirmation disabled — log in directly
     revalidatePath('/', 'layout')
     redirect('/dashboard')
 }
