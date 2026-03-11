@@ -324,9 +324,10 @@ export async function POST(req: NextRequest) {
         const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
         const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
 
-        // Use free key (gemini-2.0-flash-lite is the only model accessible)
-        const apiKey = process.env.GOOGLE_GEMINI_API_KEY_FREE
+        // Use paid key (Nivel 1) — gemini-2.0-flash requires billing
+        const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID
             || process.env.GOOGLE_GEMINI_API_KEY
+            || process.env.GOOGLE_GEMINI_API_KEY_FREE
         console.error('[fetch-subject] apiKey available:', !!apiKey, '| isPaid:', isPaid)
 
         // Collect all titles (clean, no desc mixed in)
