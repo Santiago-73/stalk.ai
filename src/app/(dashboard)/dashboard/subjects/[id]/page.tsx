@@ -25,6 +25,8 @@ interface Digest {
     content: string
     created_at: string
     source_type: string
+    source_name: string
+    metadata?: { thumbnails?: { title: string; thumb: string; permalink: string; score: number }[] } | null
 }
 
 interface Subject {
