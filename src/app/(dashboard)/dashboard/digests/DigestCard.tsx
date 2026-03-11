@@ -125,9 +125,9 @@ function DigestContent({ content, accentColor }: { content: string; accentColor:
                     )
                 }
 
-                // Section header: **emoji text:** or **emoji text**
-                if (/^\*\*[^*]/.test(t) && /\*\*:?$/.test(t)) {
-                    const header = t.replace(/^\*\*/, '').replace(/\*\*:?$/, '').replace(/:$/, '').trim()
+                // Section header: **text:** or **text** (no bullet, no takeaway)
+                if (/^\*\*[^*]/.test(t) && (/\*\*:?$/.test(t) || /:\*\*$/.test(t))) {
+                    const header = t.replace(/^\*\*/, '').replace(/:\*\*$/, '').replace(/\*\*:?$/, '').replace(/:$/, '').trim()
                     return (
                         <div key={i} style={{
                             display: 'flex', alignItems: 'center', gap: 8,
