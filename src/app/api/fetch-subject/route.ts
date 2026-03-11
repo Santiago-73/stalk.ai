@@ -47,19 +47,37 @@ async function fetchYouTube(url: string): Promise<string> {
     const handleMatch = url.match(/youtube\.com\/@([A-Za-z0-9_-]+)/)
     const userMatch = url.match(/youtube\.com\/user\/([A-Za-z0-9_-]+)/)
 
-    let feedUrl = ''
+
     if (channelMatch) {
-        feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`
-    } else if (handleMatch || userMatch) {
-        const page = await fetch(url, { signal: AbortSignal.timeout(10000) })
-        const html = await page.text()
-        const idMatch = html.match(/"channelId":"(UC[A-Za-z0-9_-]+)"/)
-        if (!idMatch) throw new Error('Could not find YouTube channel ID')
-        feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${idMatch[1]}`
-    } else {
-        throw new Error('Unrecognised YouTube URL format')
+        return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`)
     }
-    return fetchRSS(feedUrl)
+
+    if (userMatch) {
+        try { return await fetchRSS(`https://www.youtube.com/feeds/videos.xml?user=${userMatch[1]}`) }
+        catch { /* fall through to page scraping */ }
+    }
+
+    if (handleMatch || userMatch) {
+        const page = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Cache-Control': 'no-cache',
+            },
+            signal: AbortSignal.timeout(12000)
+        })
+        const html = await page.text()
+        const idMatch =
+            html.match(/"channelId":"(UC[A-Za-z0-9_-]+)"/) ||
+            html.match(/"externalId":"(UC[A-Za-z0-9_-]+)"/) ||
+            html.match(/"browseId":"(UC[A-Za-z0-9_-]+)"/) ||
+            html.match(/channel_id=(UC[A-Za-z0-9_-]+)/)
+        if (!idMatch) throw new Error('Could not find YouTube channel ID — try using the direct channel URL (youtube.com/channel/UC...)')
+        return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${idMatch[1]}`)
+    }
+
+    throw new Error('Unrecognised YouTube URL format')
 }
 
 async function getRedditAccessToken(): Promise<string> {
