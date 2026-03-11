@@ -310,66 +310,66 @@ export async function POST(req: NextRequest) {
 
         if (fetched.length === 0) return NextResponse.json({ error: 'Could not fetch content from any source' }, { status: 422 })
 
-        // Build unified prompt
-        const sourceSections = fetched
-            .map(({ source, content }) => `--- ${source.name} (${source.type.toUpperCase()}) ---\n${content}`)
-            .join('\n\n')
-
         const subjectContext = typedSubject.description
             ? `${typedSubject.name} (${typedSubject.description})`
             : typedSubject.name
 
-        // Get user plan before building prompt
+        // Get user plan
         const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
         const isPaid = profile?.plan === 'pro' || profile?.plan === 'ultra'
 
-        const freePrompt = `You are a content assistant. Below are the MOST RECENT video/post titles from channels belonging to "${subjectContext}", listed newest first.
-
-List ALL of them grouped by source. For EACH title write exactly one bullet point in this format:
-• **[exact title]** — [one sentence describing what this video/post is about, inferred from the title]
-
-Rules:
-- Put the title in **bold** using double asterisks
-- Always add a description after the dash — never leave it empty
-- Do NOT skip any title
-- Write in the same language as the titles
-
-${sourceSections}`
-
-        const paidPrompt = `You are an expert analyst and content curator. Below is a list of recent video/post TITLES collected from multiple channels belonging to "${subjectContext}". Ignore any promotional text, social media links, or contact info in the data.
-
-List ALL recent content grouped by source. For EACH title write exactly one bullet in this format:
-• **[exact title]** — [one sentence describing what this video/post is about, inferred from the title]
-
-Then after ALL bullets, add a final line:
-**💡 Takeaway:** [one sentence summarising the overall recent activity across all sources]
-
-Rules:
-- Put every title in **bold** using double asterisks
-- Always write a description after the dash — never leave it empty
-- Do NOT skip any title
-- Use a contextual emoji before the description: 🎬 new video/content, 📢 announcement, 💡 insight, 🏆 achievement, 🍽️ food/travel, etc.
-- Write in the same language as the titles
-
-Write in the SAME language as the majority of the content. Be specific — names, numbers, dates.
-
-${sourceSections}`
-
-        const prompt = isPaid ? paidPrompt : freePrompt
         const apiKey = isPaid
             ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
             : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
 
-        let digest: string
+        // Extract all titles in order
+        const allItems: { title: string; sourceName: string }[] = []
+        for (const { source, content } of fetched) {
+            for (const line of content.split('\n').filter(l => l.startsWith('• '))) {
+                const title = line.replace(/^•\s*/, '').trim()
+                if (title) allItems.push({ title, sourceName: source.name })
+            }
+        }
+
+        // Ask AI ONLY for short descriptions (simple numbered list — works with any model)
+        const titlesList = allItems.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
+        const descPrompt = `For each title below, write ONE SHORT sentence (in the same language as the title) describing what this video/post is about. Output ONLY numbered lines matching the input. No extra text.\n\n${titlesList}`
+
+        let descriptions: string[] = []
         try {
-            if (!apiKey) throw new Error('No Gemini API key')
-            digest = await geminiGenerate(prompt, apiKey, isPaid)
+            if (apiKey) {
+                const raw = await geminiGenerate(descPrompt, apiKey, isPaid)
+                descriptions = raw.split('\n')
+                    .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
+                    .filter(l => l.length > 0)
+            }
         } catch (err) {
-            console.error('[fetch-subject] Gemini error:', err)
-            // Fallback: concatenate top lines from each source
-            digest = fetched.map(({ source, content }) =>
-                `**${source.name}:**\n${content.split('\n').slice(0, 3).join('\n')}`
-            ).join('\n\n')
+            console.error('[fetch-subject] Gemini descriptions error:', err)
+        }
+
+        // Build formatted digest ourselves (guaranteed bold titles)
+        let digest = ''
+        let idx = 0
+        for (const { source, content } of fetched) {
+            const lines = content.split('\n').filter(l => l.startsWith('• '))
+            if (lines.length === 0) continue
+            digest += `**${source.name}:**\n`
+            for (const line of lines) {
+                const title = line.replace(/^•\s*/, '').trim()
+                const desc = descriptions[idx] || ''
+                digest += `• **${title}**${desc ? ` — ${desc}` : ''}\n`
+                idx++
+            }
+            digest += '\n'
+        }
+
+        // Add takeaway for all tiers
+        if (allItems.length > 0 && apiKey) {
+            try {
+                const takeawayPrompt = `Based on these recent posts from ${subjectContext}: "${allItems.map(t => t.title).join(' | ')}" — write ONE sentence (max 25 words) summarizing the overall recent activity. Write in the same language as the titles.`
+                const takeaway = await geminiGenerate(takeawayPrompt, apiKey, isPaid)
+                digest += `**💡 Takeaway:** ${takeaway.trim().replace(/^["']|["']$/g, '')}`
+            } catch { /* skip takeaway on error */ }
         }
 
         // Save digest
