@@ -116,6 +116,7 @@ async function fetchRSS(url: string): Promise<FetchResult> {
 
             // Strip HTML tags, decode entities, and clean up
             const clean = decodeEntities(String(rawDesc).replace(/<[^>]*>/g, ''))
+                .replace(/\r/g, '')   // actual carriage return chars (fast-xml-parser decodes &#13; to \r)
                 .replace(/\s+/g, ' ')
                 .trim()
                 .slice(0, 400)

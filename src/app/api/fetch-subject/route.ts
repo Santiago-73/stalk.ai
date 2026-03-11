@@ -37,7 +37,7 @@ async function fetchRSS(url: string): Promise<string> {
         const title = decodeEntities(item.title ?? '')
         let rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
         if (typeof rawDesc === 'object' && rawDesc !== null) rawDesc = String((rawDesc as Record<string, unknown>)['#text'] ?? '')
-        const clean = decodeEntities(String(rawDesc).replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim().slice(0, 400)
+        const clean = decodeEntities(String(rawDesc).replace(/<[^>]*>/g, '')).replace(/\r/g, '').replace(/\s+/g, ' ').trim().slice(0, 400)
         return `• ${title}: ${clean}`
     }).join('\n')
 }
