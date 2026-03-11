@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, Clock, FileText, Github, BookOpen, Zap
+    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, FileText, Github, BookOpen, Zap
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 
 type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github'
 
@@ -45,15 +46,6 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
     twitter:  { icon: <Twitter size={15} />,      color: '#1da9f0', label: 'Twitter/X', placeholder: 'https://twitter.com/@username', proOnly: true },
 }
 
-function timeAgo(date: string) {
-    const diff = Date.now() - new Date(date).getTime()
-    const m = Math.floor(diff / 60000)
-    if (m < 1) return 'just now'
-    if (m < 60) return `${m}m ago`
-    const h = Math.floor(m / 60)
-    if (h < 24) return `${h}h ago`
-    return `${Math.floor(h / 24)}d ago`
-}
 
 export default function SubjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
@@ -321,46 +313,10 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                            {digests.map(digest => {
-                                const bullets = digest.content
-                                    .split('\n')
-                                    .map(l => l.trim())
-                                    .filter(l => l.startsWith('•') || l.startsWith('-') || l.startsWith('*'))
-                                    .map(l => l.replace(/^[•\-*]\s*/, ''))
-
-                                return (
-                                    <div key={digest.id} className="card" style={{ padding: '20px 24px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                            <span style={{
-                                                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
-                                                background: 'rgba(124,58,237,0.15)', color: 'var(--accent-bright)',
-                                                border: '1px solid rgba(124,58,237,0.2)'
-                                            }}>
-                                                AI Digest
-                                            </span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 12 }}>
-                                                <Clock size={12} />
-                                                {timeAgo(digest.created_at)}
-                                            </div>
-                                        </div>
-                                        {bullets.length > 0 ? (
-                                            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 10 }}>
-                                                {bullets.map((bullet, i) => (
-                                                    <li key={i} style={{ display: 'flex', gap: 10, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                                                        <span style={{ color: 'var(--accent-bright)', marginTop: 2, flexShrink: 0 }}>•</span>
-                                                        <span>{bullet}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        ) : (
-                                            <p style={{ fontSize: 14, color: 'var(--text-secondary)', whiteSpace: 'pre-line', margin: 0 }}>
-                                                {digest.content}
-                                            </p>
-                                        )}
-                                    </div>
-                                )
-                            })}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                            {digests.map(digest => (
+                                <DigestCard key={digest.id} digest={digest} />
+                            ))}
                         </div>
                     )}
                 </div>

@@ -52,6 +52,10 @@ function decodeEntities(text: string): string {
         .replace(/&#39;/g, "'")
         .replace(/&#32;/g, ' ')
         .replace(/&nbsp;/g, ' ')
+        .replace(/&#13;/g, '')
+        .replace(/&#10;/g, ' ')
+        .replace(/&#\d+;/g, '')
+        .replace(/&[a-z]+;/gi, '')
 }
 
 // --- Fetchers ---
