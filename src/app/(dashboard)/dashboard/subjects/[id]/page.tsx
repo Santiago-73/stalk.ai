@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, FileText, Github, BookOpen, Zap, Instagram, Clock
+    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, FileText, Github, BookOpen, Zap, Instagram, Clock,
+    Twitch, Linkedin, AtSign, Code2, Newspaper
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github' | 'instagram'
+type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github' | 'instagram' | 'medium' | 'twitch' | 'devto' | 'threads' | 'linkedin'
 
 interface Source {
     id: string
@@ -45,9 +46,15 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
     tiktok:   { icon: <Music size={15} />,          color: '#ff0050', label: 'TikTok',    placeholder: 'https://tiktok.com/@username',  proOnly: true },
     substack: { icon: <BookOpen size={15} />,       color: '#ff6719', label: 'Substack',  placeholder: 'https://username.substack.com', proOnly: true },
     github:   { icon: <Github size={15} />,         color: '#e2e8f0', label: 'GitHub',    placeholder: 'https://github.com/owner/repo', proOnly: true },
+    // Pro-only (new)
+    medium:  { icon: <Newspaper size={15} />,  color: '#000000', label: 'Medium',    placeholder: 'https://medium.com/@username',   proOnly: true },
+    twitch:  { icon: <Twitch size={15} />,     color: '#9146ff', label: 'Twitch',    placeholder: 'https://twitch.tv/username',     proOnly: true },
+    devto:   { icon: <Code2 size={15} />,      color: '#3b49df', label: 'Dev.to',    placeholder: 'https://dev.to/username',        proOnly: true },
     // Coming soon
     twitter:   { icon: <Twitter size={15} />,    color: '#1da9f0', label: 'Twitter/X',  placeholder: '', comingSoon: true },
     instagram: { icon: <Instagram size={15} />,  color: '#e1306c', label: 'Instagram',   placeholder: '', comingSoon: true },
+    threads:   { icon: <AtSign size={15} />,     color: '#000000', label: 'Threads',     placeholder: '', comingSoon: true },
+    linkedin:  { icon: <Linkedin size={15} />,   color: '#0077b5', label: 'LinkedIn',    placeholder: '', comingSoon: true },
 }
 
 

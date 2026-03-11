@@ -250,6 +250,62 @@ async function fetchGitHub(url: string): Promise<FetchedItem[]> {
     catch { return await fetchRSS(`https://github.com/${repo}/commits.atom`) }
 }
 
+async function fetchMedium(url: string): Promise<FetchedItem[]> {
+    const handleMatch = url.match(/medium\.com\/@?([A-Za-z0-9_.-]+)/) || url.match(/([A-Za-z0-9_.-]+)\.medium\.com/)
+    if (!handleMatch) throw new Error('Could not extract Medium username')
+    const username = handleMatch[1]
+    return fetchRSS(`https://medium.com/feed/@${username}`)
+}
+
+async function fetchTwitch(url: string): Promise<FetchedItem[]> {
+    const clientId = process.env.TWITCH_CLIENT_ID
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET
+    if (!clientId || !clientSecret) throw new Error('Twitch API credentials not configured')
+    const handleMatch = url.match(/twitch\.tv\/([A-Za-z0-9_]+)/)
+    if (!handleMatch) throw new Error('Could not extract Twitch username')
+    const username = handleMatch[1]
+    // Get OAuth token
+    const tokenRes = await fetch(
+        `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
+        { method: 'POST', signal: AbortSignal.timeout(8000) }
+    )
+    if (!tokenRes.ok) throw new Error('Twitch OAuth failed')
+    const { access_token } = await tokenRes.json()
+    const headers = { 'Client-ID': clientId, 'Authorization': `Bearer ${access_token}` }
+    // Get user ID
+    const userRes = await fetch(`https://api.twitch.tv/helix/users?login=${username}`, { headers, signal: AbortSignal.timeout(8000) })
+    if (!userRes.ok) throw new Error('Twitch user not found')
+    const userId = (await userRes.json())?.data?.[0]?.id
+    if (!userId) throw new Error('Could not find Twitch user')
+    // Get recent videos
+    const videosRes = await fetch(
+        `https://api.twitch.tv/helix/videos?user_id=${userId}&type=archive&first=10`,
+        { headers, signal: AbortSignal.timeout(8000) }
+    )
+    if (!videosRes.ok) throw new Error('Failed to fetch Twitch videos')
+    const videos = (await videosRes.json())?.data || []
+    return videos.map((v: { title?: string; view_count?: number }) => ({
+        title: v.title || 'Stream',
+        desc: v.view_count ? `👁 ${v.view_count.toLocaleString()} views` : '',
+    }))
+}
+
+async function fetchDevTo(url: string): Promise<FetchedItem[]> {
+    const handleMatch = url.match(/dev\.to\/([A-Za-z0-9_-]+)/)
+    if (!handleMatch) throw new Error('Could not extract Dev.to username')
+    const username = handleMatch[1]
+    const res = await fetch(
+        `https://dev.to/api/articles?username=${username}&per_page=10`,
+        { headers: { 'User-Agent': 'stalk-ai/1.0' }, signal: AbortSignal.timeout(10000) }
+    )
+    if (!res.ok) throw new Error(`Dev.to API returned ${res.status}`)
+    const articles = await res.json()
+    return articles.slice(0, 10).map((a: { title?: string; positive_reactions_count?: number }) => ({
+        title: a.title || 'Article',
+        desc: a.positive_reactions_count ? `❤️ ${a.positive_reactions_count}` : '',
+    }))
+}
+
 async function fetchSourceContent(source: { type: string; url: string }): Promise<FetchedItem[]> {
     switch (source.type) {
         case 'youtube': return fetchYouTube(source.url)
@@ -260,6 +316,9 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
         case 'substack': return fetchSubstack(source.url)
         case 'github': return fetchGitHub(source.url)
         case 'hackernews': return fetchHackerNews(source.url)
+        case 'medium': return fetchMedium(source.url)
+        case 'twitch': return fetchTwitch(source.url)
+        case 'devto': return fetchDevTo(source.url)
         default: return fetchRSS(source.url)
     }
 }
