@@ -240,24 +240,41 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
 // ── Gemini ───────────────────────────────────────────────────────────────────
 
 async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
-    const model = 'gemini-2.0-flash'
-    const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-            signal: AbortSignal.timeout(45000),
+    // Try models in order until one works — newer keys require newer models
+    const models = [
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-2.0-flash',
+    ]
+    let lastError = ''
+    for (const model of models) {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+                signal: AbortSignal.timeout(45000),
+            }
+        )
+        if (res.status === 404) {
+            lastError = `${model} not found`
+            continue
         }
-    )
-    if (!res.ok) {
-        const errBody = await res.text().catch(() => '')
-        throw new Error(`Gemini ${res.status}: ${errBody.slice(0, 300)}`)
+        if (!res.ok) {
+            const errBody = await res.text().catch(() => '')
+            throw new Error(`Gemini ${res.status}: ${errBody.slice(0, 200)}`)
+        }
+        const json = await res.json()
+        const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+        if (text) {
+            console.error('[fetch-subject] Using model:', model)
+            return text
+        }
     }
-    const json = await res.json()
-    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-    if (!text) throw new Error('Empty Gemini response')
-    return text
+    throw new Error(`No working Gemini model found. Last error: ${lastError}`)
 }
 
 // ── Route ────────────────────────────────────────────────────────────────────
