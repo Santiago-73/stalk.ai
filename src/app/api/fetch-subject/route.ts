@@ -341,9 +341,13 @@ export async function POST(req: NextRequest) {
         try {
             if (apiKey) {
                 const raw = await geminiGenerate(descPrompt, apiKey, isPaid)
+                console.log('[fetch-subject] Gemini raw descriptions:', raw.slice(0, 500))
+                // Only keep lines that start with a number — ignores any intro/outro text
                 descriptions = raw.split('\n')
+                    .filter(l => /^\d+[\.\)]\s/.test(l.trim()))
                     .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
                     .filter(l => l.length > 0)
+                console.log('[fetch-subject] Parsed descriptions count:', descriptions.length, '/ titles count:', allItems.length)
             }
         } catch (err) {
             console.error('[fetch-subject] Gemini descriptions error:', err)
