@@ -250,7 +250,10 @@ async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
             signal: AbortSignal.timeout(45000),
         }
     )
-    if (!res.ok) throw new Error(`Gemini ${res.status}`)
+    if (!res.ok) {
+        const errBody = await res.text().catch(() => '')
+        throw new Error(`Gemini ${res.status}: ${errBody.slice(0, 300)}`)
+    }
     const json = await res.json()
     const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
     if (!text) throw new Error('Empty Gemini response')
