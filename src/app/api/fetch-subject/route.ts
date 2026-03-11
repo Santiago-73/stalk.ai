@@ -240,7 +240,7 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
 // ── Gemini ───────────────────────────────────────────────────────────────────
 
 async function geminiGenerate(prompt: string, apiKey: string, isPaid: boolean): Promise<string> {
-    const model = isPaid ? 'gemini-2.5-flash' : 'gemini-2.0-flash'
+    const model = isPaid ? 'gemini-1.5-pro' : 'gemini-2.0-flash'
     const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
