@@ -348,7 +348,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                             </label>
                             {/* Free platforms */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
-                                {(Object.keys(typeConfig) as SourceType[]).filter(t => !typeConfig[t].proOnly).map(type => {
+                                {(Object.keys(typeConfig) as SourceType[]).filter(t => !typeConfig[t].proOnly && !typeConfig[t].comingSoon).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type
                                     return (
