@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, FileText, Github, BookOpen, Zap
+    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, FileText, Github, BookOpen, Zap, Instagram, Clock
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github'
+type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github' | 'instagram'
 
 interface Source {
     id: string
@@ -35,17 +35,19 @@ interface Subject {
     description: string
 }
 
-const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean }> = {
-    youtube:    { icon: <Youtube size={15} />,    color: '#ff4444', label: 'YouTube',      placeholder: 'https://youtube.com/@channelname' },
-    bluesky:    { icon: <MessageSquare size={15} />, color: '#1690ff', label: 'Bluesky',   placeholder: 'https://bsky.app/profile/@username' },
-    hackernews: { icon: <TrendingUp size={15} />, color: '#ff6600', label: 'Hacker News',  placeholder: 'https://news.ycombinator.com/top' },
-    rss:        { icon: <Rss size={15} />,        color: '#10b981', label: 'RSS / Blog',   placeholder: 'https://example.com/feed.xml' },
+const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean; comingSoon?: boolean }> = {
+    youtube:    { icon: <Youtube size={15} />,       color: '#ff4444', label: 'YouTube',      placeholder: 'https://youtube.com/@channelname' },
+    bluesky:    { icon: <MessageSquare size={15} />, color: '#1690ff', label: 'Bluesky',      placeholder: 'https://bsky.app/profile/@username' },
+    hackernews: { icon: <TrendingUp size={15} />,    color: '#ff6600', label: 'Hacker News',  placeholder: 'https://news.ycombinator.com/top' },
+    rss:        { icon: <Rss size={15} />,           color: '#10b981', label: 'RSS / Blog',   placeholder: 'https://example.com/feed.xml' },
     // Pro-only
-    reddit:  { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',    placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
-    tiktok:  { icon: <Music size={15} />,         color: '#ff0050', label: 'TikTok',    placeholder: 'https://tiktok.com/@username',  proOnly: true },
-    substack: { icon: <BookOpen size={15} />,     color: '#ff6719', label: 'Substack',  placeholder: 'https://username.substack.com', proOnly: true },
-    github:   { icon: <Github size={15} />,       color: '#e2e8f0', label: 'GitHub',    placeholder: 'https://github.com/owner/repo', proOnly: true },
-    twitter:  { icon: <Twitter size={15} />,      color: '#1da9f0', label: 'Twitter/X', placeholder: 'https://twitter.com/@username', proOnly: true },
+    reddit:   { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',    placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
+    tiktok:   { icon: <Music size={15} />,          color: '#ff0050', label: 'TikTok',    placeholder: 'https://tiktok.com/@username',  proOnly: true },
+    substack: { icon: <BookOpen size={15} />,       color: '#ff6719', label: 'Substack',  placeholder: 'https://username.substack.com', proOnly: true },
+    github:   { icon: <Github size={15} />,         color: '#e2e8f0', label: 'GitHub',    placeholder: 'https://github.com/owner/repo', proOnly: true },
+    // Coming soon
+    twitter:   { icon: <Twitter size={15} />,    color: '#1da9f0', label: 'Twitter/X',  placeholder: '', comingSoon: true },
+    instagram: { icon: <Instagram size={15} />,  color: '#e1306c', label: 'Instagram',   placeholder: '', comingSoon: true },
 }
 
 
@@ -405,13 +407,41 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                     })}
                                 </div>
                             </div>
+                            {/* Coming soon */}
+                            <div style={{ marginTop: 10 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                    <Clock size={10} style={{ color: 'var(--text-muted)' }} />
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                        Próximamente
+                                    </span>
+                                    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                                    {(Object.keys(typeConfig) as SourceType[]).filter(t => typeConfig[t].comingSoon).map(type => {
+                                        const c = typeConfig[type]
+                                        return (
+                                            <button key={type} disabled title="Próximamente" style={{
+                                                padding: '10px 6px', borderRadius: 10, cursor: 'not-allowed',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                                                color: 'var(--text-muted)', opacity: 0.45,
+                                                fontFamily: 'inherit', position: 'relative',
+                                            }}>
+                                                {c.icon}
+                                                <span style={{ fontSize: 10, fontWeight: 600 }}>{c.label}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
                             {plan === 'free' && (
                                 <a href="/settings" style={{
-                                    display: 'block', marginTop: 6, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
+                                    display: 'block', marginTop: 8, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
                                     background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
                                     fontSize: 11, color: '#fbbf24', textDecoration: 'none', fontWeight: 600
                                 }}>
-                                    ⚡ Upgrade to Pro to unlock Reddit, TikTok, Substack & GitHub →
+                                    ⚡ Upgrade to Pro para desbloquear Reddit, TikTok, Substack & GitHub →
                                 </a>
                             )}
                             {plan !== 'free' && (selectedType === 'reddit' || selectedType === 'tiktok') && (
