@@ -176,6 +176,22 @@ async function fetchBluesky(url: string): Promise<string> {
     }).join('\n')
 }
 
+async function fetchSubstack(url: string): Promise<string> {
+    let feedUrl = url
+    const atMatch = url.match(/substack\.com\/@([A-Za-z0-9_-]+)/)
+    if (atMatch) feedUrl = `https://${atMatch[1]}.substack.com/feed`
+    else if (!url.includes('/feed')) feedUrl = url.replace(/\/?$/, '/feed')
+    return fetchRSS(feedUrl)
+}
+
+async function fetchGitHub(url: string): Promise<string> {
+    const repoMatch = url.match(/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/)
+    if (!repoMatch) throw new Error('Could not parse GitHub URL. Use format: github.com/owner/repo')
+    const repo = repoMatch[1].replace(/\/$/, '')
+    try { return await fetchRSS(`https://github.com/${repo}/releases.atom`) }
+    catch { return await fetchRSS(`https://github.com/${repo}/commits.atom`) }
+}
+
 async function fetchSourceContent(source: { type: string; url: string }): Promise<string> {
     switch (source.type) {
         case 'youtube': return fetchYouTube(source.url)
@@ -183,6 +199,8 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
         case 'tiktok': return fetchTikTok(source.url)
         case 'twitter': return fetchTwitter(source.url)
         case 'bluesky': return fetchBluesky(source.url)
+        case 'substack': return fetchSubstack(source.url)
+        case 'github': return fetchGitHub(source.url)
         default: return fetchRSS(source.url)
     }
 }

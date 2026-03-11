@@ -425,6 +425,31 @@ async function fetchHackerNews(url: string): Promise<FetchResult> {
     }
 }
 
+async function fetchSubstack(url: string): Promise<FetchResult> {
+    // Normalize: substack.com/@user → user.substack.com/feed
+    let feedUrl = url
+    const atMatch = url.match(/substack\.com\/@([A-Za-z0-9_-]+)/)
+    if (atMatch) {
+        feedUrl = `https://${atMatch[1]}.substack.com/feed`
+    } else if (!url.includes('/feed')) {
+        feedUrl = url.replace(/\/?$/, '/feed')
+    }
+    return fetchRSS(feedUrl)
+}
+
+async function fetchGitHub(url: string): Promise<FetchResult> {
+    // Support: github.com/owner/repo → releases.atom or commits.atom
+    const repoMatch = url.match(/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/)
+    if (!repoMatch) throw new Error('Could not parse GitHub URL. Use format: github.com/owner/repo')
+    const repo = repoMatch[1].replace(/\/$/, '')
+    // Try releases first, fall back to commits
+    try {
+        return await fetchRSS(`https://github.com/${repo}/releases.atom`)
+    } catch {
+        return await fetchRSS(`https://github.com/${repo}/commits.atom`)
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { source_id } = await req.json()
@@ -459,6 +484,10 @@ export async function POST(req: NextRequest) {
                 fetchResult = await fetchTikTok(source.url)
             } else if (source.type === 'hackernews') {
                 fetchResult = await fetchHackerNews(source.url)
+            } else if (source.type === 'substack') {
+                fetchResult = await fetchSubstack(source.url)
+            } else if (source.type === 'github') {
+                fetchResult = await fetchGitHub(source.url)
             } else {
                 fetchResult = await fetchRSS(source.url)
             }

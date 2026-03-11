@@ -14,7 +14,7 @@ interface Subject {
     sources?: { count: number }[]
 }
 
-const PLAN_LIMITS: Record<string, number> = { free: 3, pro: 20, ultra: Infinity }
+const PLAN_LIMITS: Record<string, number> = { free: 3, pro: 50, ultra: Infinity }
 
 export default function SubjectsPage() {
     const [subjects, setSubjects] = useState<Subject[]>([])

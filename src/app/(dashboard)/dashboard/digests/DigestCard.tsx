@@ -36,6 +36,8 @@ function sourceColor(type: string) {
     if (type === 'hackernews') return { bg: 'rgba(255,102,0,0.2)', color: '#ff6600', border: 'rgba(255,102,0,0.4)', gradient: 'linear-gradient(135deg, #ff6600, #ff8533)' }
     if (type === 'reddit') return { bg: 'rgba(255,145,0,0.2)', color: '#ff9100', border: 'rgba(255,145,0,0.4)', gradient: 'linear-gradient(135deg, #ff7e22, #ff9100)' }
     if (type === 'subject') return { bg: 'rgba(124,58,237,0.2)', color: '#a78bfa', border: 'rgba(124,58,237,0.4)', gradient: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }
+    if (type === 'substack') return { bg: 'rgba(255,103,25,0.2)', color: '#ff6719', border: 'rgba(255,103,25,0.4)', gradient: 'linear-gradient(135deg, #ff6719, #ff8c4b)' }
+    if (type === 'github') return { bg: 'rgba(226,232,240,0.15)', color: '#e2e8f0', border: 'rgba(226,232,240,0.3)', gradient: 'linear-gradient(135deg, #94a3b8, #e2e8f0)' }
     return { bg: 'rgba(102,117,255,0.2)', color: '#6675ff', border: 'rgba(102,117,255,0.4)', gradient: 'linear-gradient(135deg, #6675ff, #7c97ff)' }
 }
 

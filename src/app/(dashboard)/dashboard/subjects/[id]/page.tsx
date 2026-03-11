@@ -4,12 +4,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, Clock, FileText
+    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, Clock, FileText, Github, BookOpen, Zap
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok'
+type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github'
 
 interface Source {
     id: string
@@ -32,14 +32,17 @@ interface Subject {
     description: string
 }
 
-const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string }> = {
-    youtube: { icon: <Youtube size={15} />, color: '#ff4444', label: 'YouTube', placeholder: 'https://youtube.com/@channelname' },
-    reddit: { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit', placeholder: 'https://reddit.com/r/subreddit' },
-    twitter: { icon: <Twitter size={15} />, color: '#1da9f0', label: 'Twitter/X', placeholder: 'https://twitter.com/@username' },
-    bluesky: { icon: <MessageSquare size={15} />, color: '#1690ff', label: 'Bluesky', placeholder: 'https://bsky.app/profile/@username' },
-    tiktok: { icon: <Music size={15} />, color: '#ff0050', label: 'TikTok', placeholder: 'https://tiktok.com/@username' },
-    hackernews: { icon: <TrendingUp size={15} />, color: '#ff6600', label: 'Hacker News', placeholder: 'https://news.ycombinator.com/top' },
-    rss: { icon: <Rss size={15} />, color: '#10b981', label: 'RSS / Blog', placeholder: 'https://example.com/feed.xml' },
+const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean }> = {
+    youtube:    { icon: <Youtube size={15} />,    color: '#ff4444', label: 'YouTube',      placeholder: 'https://youtube.com/@channelname' },
+    bluesky:    { icon: <MessageSquare size={15} />, color: '#1690ff', label: 'Bluesky',   placeholder: 'https://bsky.app/profile/@username' },
+    hackernews: { icon: <TrendingUp size={15} />, color: '#ff6600', label: 'Hacker News',  placeholder: 'https://news.ycombinator.com/top' },
+    rss:        { icon: <Rss size={15} />,        color: '#10b981', label: 'RSS / Blog',   placeholder: 'https://example.com/feed.xml' },
+    // Pro-only
+    reddit:  { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',    placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
+    tiktok:  { icon: <Music size={15} />,         color: '#ff0050', label: 'TikTok',    placeholder: 'https://tiktok.com/@username',  proOnly: true },
+    substack: { icon: <BookOpen size={15} />,     color: '#ff6719', label: 'Substack',  placeholder: 'https://username.substack.com', proOnly: true },
+    github:   { icon: <Github size={15} />,       color: '#e2e8f0', label: 'GitHub',    placeholder: 'https://github.com/owner/repo', proOnly: true },
+    twitter:  { icon: <Twitter size={15} />,      color: '#1da9f0', label: 'Twitter/X', placeholder: 'https://twitter.com/@username', proOnly: true },
 }
 
 function timeAgo(date: string) {
@@ -62,6 +65,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
     const [generating, setGenerating] = useState(false)
     const [toastOk, setToastOk] = useState(false)
     const [toastError, setToastError] = useState<string | null>(null)
+    const [plan, setPlan] = useState<string>('free')
 
     // Add source modal
     const [showModal, setShowModal] = useState(false)
@@ -76,15 +80,17 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
-        const [subjectRes, sourcesRes, digestsRes] = await Promise.all([
+        const [subjectRes, sourcesRes, digestsRes, profileRes] = await Promise.all([
             supabase.from('subjects').select('*').eq('id', id).eq('user_id', user.id).single(),
             supabase.from('sources').select('*').eq('subject_id', id).order('created_at', { ascending: true }),
             supabase.from('digests').select('*').eq('subject_id', id).order('created_at', { ascending: false }).limit(10),
+            supabase.from('profiles').select('plan').eq('id', user.id).single(),
         ])
 
         if (subjectRes.data) setSubject(subjectRes.data as Subject)
         if (sourcesRes.data) setSources(sourcesRes.data as Source[])
         if (digestsRes.data) setDigests(digestsRes.data as Digest[])
+        if (profileRes.data) setPlan(profileRes.data.plan ?? 'free')
         setLoading(false)
     }, [supabase, id])
 
@@ -380,44 +386,83 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                             <label style={{ display: 'block', marginBottom: 10, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
                                 Platform
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                                {(Object.keys(typeConfig) as SourceType[]).map(type => {
+                            {/* Free platforms */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
+                                {(Object.keys(typeConfig) as SourceType[]).filter(t => !typeConfig[t].proOnly).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type
-                                    const unstable = type === 'reddit' || type === 'tiktok'
                                     return (
-                                        <button
-                                            key={type}
-                                            onClick={() => setSelectedType(type)}
-                                            style={{
-                                                padding: '10px 6px', borderRadius: 10, cursor: 'pointer',
-                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                                background: active ? `${c.color}22` : 'var(--bg-secondary)',
-                                                border: `1px solid ${active ? c.color : 'var(--border)'}`,
-                                                color: active ? c.color : 'var(--text-muted)',
-                                                transition: 'all 0.15s', fontFamily: 'inherit',
-                                                position: 'relative'
-                                            }}
-                                        >
-                                            {unstable && (
-                                                <span style={{
-                                                    position: 'absolute', top: 4, right: 4,
-                                                    fontSize: 9, lineHeight: 1
-                                                }}>⚠️</span>
-                                            )}
+                                        <button key={type} onClick={() => setSelectedType(type)} style={{
+                                            padding: '10px 6px', borderRadius: 10, cursor: 'pointer',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                            background: active ? `${c.color}22` : 'var(--bg-secondary)',
+                                            border: `1px solid ${active ? c.color : 'var(--border)'}`,
+                                            color: active ? c.color : 'var(--text-muted)',
+                                            transition: 'all 0.15s', fontFamily: 'inherit',
+                                        }}>
                                             {c.icon}
                                             <span style={{ fontSize: 10, fontWeight: 600 }}>{c.label}</span>
                                         </button>
                                     )
                                 })}
                             </div>
-                            {(selectedType === 'reddit' || selectedType === 'tiktok') && (
+                            {/* Pro-only platforms */}
+                            <div style={{ marginBottom: 4 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                    <span style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                        <Zap size={10} style={{ display: 'inline', marginRight: 3 }} />Pro
+                                    </span>
+                                    <div style={{ flex: 1, height: 1, background: 'rgba(251,191,36,0.2)' }} />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, position: 'relative' }}>
+                                    {(Object.keys(typeConfig) as SourceType[]).filter(t => typeConfig[t].proOnly).map(type => {
+                                        const c = typeConfig[type]
+                                        const active = selectedType === type
+                                        const locked = plan === 'free'
+                                        const unstable = type === 'reddit' || type === 'tiktok'
+                                        return (
+                                            <button key={type}
+                                                onClick={() => !locked && setSelectedType(type)}
+                                                title={locked ? 'Upgrade to Pro to unlock' : undefined}
+                                                style={{
+                                                    padding: '10px 6px', borderRadius: 10,
+                                                    cursor: locked ? 'not-allowed' : 'pointer',
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                                    background: locked ? 'var(--bg-secondary)' : active ? `${c.color}22` : 'var(--bg-secondary)',
+                                                    border: `1px solid ${locked ? 'var(--border)' : active ? c.color : 'rgba(251,191,36,0.25)'}`,
+                                                    color: locked ? 'var(--text-muted)' : active ? c.color : 'var(--text-muted)',
+                                                    opacity: locked ? 0.5 : 1,
+                                                    transition: 'all 0.15s', fontFamily: 'inherit', position: 'relative',
+                                                }}>
+                                                {unstable && !locked && (
+                                                    <span style={{ position: 'absolute', top: 4, right: 4, fontSize: 9 }}>⚠️</span>
+                                                )}
+                                                {locked && (
+                                                    <span style={{ position: 'absolute', top: 4, right: 4, fontSize: 9 }}>🔒</span>
+                                                )}
+                                                {c.icon}
+                                                <span style={{ fontSize: 10, fontWeight: 600 }}>{c.label}</span>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                            {plan === 'free' && (
+                                <a href="/settings" style={{
+                                    display: 'block', marginTop: 6, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
+                                    background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
+                                    fontSize: 11, color: '#fbbf24', textDecoration: 'none', fontWeight: 600
+                                }}>
+                                    ⚡ Upgrade to Pro to unlock Reddit, TikTok, Substack & GitHub →
+                                </a>
+                            )}
+                            {plan !== 'free' && (selectedType === 'reddit' || selectedType === 'tiktok') && (
                                 <div style={{
-                                    marginTop: 8, padding: '9px 12px', borderRadius: 10,
+                                    marginTop: 6, padding: '8px 12px', borderRadius: 8,
                                     background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
                                     fontSize: 11, color: '#ca8a04', lineHeight: 1.5
                                 }}>
-                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> puede ser inestable — estas plataformas bloquean peticiones de servidores cloud con frecuencia.
+                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> puede ser inestable — bloquea peticiones de servidores cloud con frecuencia.
                                 </div>
                             )}
                         </div>
