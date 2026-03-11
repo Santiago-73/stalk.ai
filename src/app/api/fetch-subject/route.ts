@@ -20,6 +20,11 @@ interface RSSItem {
     'media:group'?: { 'media:description'?: string }
 }
 
+interface FetchedItem {
+    title: string
+    desc: string
+}
+
 function cleanDescription(raw: unknown, isYouTube = false): string {
     if (isYouTube) return '' // YouTube descriptions are always promotional spam
     let text = typeof raw === 'object' && raw !== null
@@ -32,7 +37,7 @@ function cleanDescription(raw: unknown, isYouTube = false): string {
     return text.trim().slice(0, 200)
 }
 
-async function fetchRSS(url: string, isYouTube = false): Promise<string> {
+async function fetchRSS(url: string, isYouTube = false): Promise<FetchedItem[]> {
     const res = await fetch(url, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -49,15 +54,14 @@ async function fetchRSS(url: string, isYouTube = false): Promise<string> {
         const title = decodeEntities(item.title ?? '')
         const rawDesc = item.description ?? item.summary ?? item.content ?? item['media:group']?.['media:description'] ?? ''
         const desc = cleanDescription(rawDesc, isYouTube)
-        return desc ? `• ${title}: ${desc}` : `• ${title}`
-    }).join('\n')
+        return { title, desc }
+    })
 }
 
-async function fetchYouTube(url: string): Promise<string> {
+async function fetchYouTube(url: string): Promise<FetchedItem[]> {
     const channelMatch = url.match(/youtube\.com\/channel\/([A-Za-z0-9_-]+)/)
     const handleMatch = url.match(/youtube\.com\/@([A-Za-z0-9_-]+)/)
     const userMatch = url.match(/youtube\.com\/user\/([A-Za-z0-9_-]+)/)
-
 
     if (channelMatch) {
         return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`, true)
@@ -112,7 +116,7 @@ async function getRedditAccessToken(): Promise<string> {
     return json.access_token
 }
 
-async function fetchReddit(url: string): Promise<string> {
+async function fetchReddit(url: string): Promise<FetchedItem[]> {
     const subMatch = url.match(/reddit\.com\/r\/([A-Za-z0-9_]+)/)
     if (!subMatch) throw new Error('Could not extract subreddit from URL')
     const subreddit = subMatch[1]
@@ -133,12 +137,13 @@ async function fetchReddit(url: string): Promise<string> {
 
     const data = await res.json()
     const posts: any[] = data.data?.children || []
-    return posts.slice(0, 10).map((p: any) =>
-        `• ${p.data.title} (Score: ${p.data.score}) — https://reddit.com${p.data.permalink}`
-    ).join('\n')
+    return posts.slice(0, 10).map((p: any) => ({
+        title: p.data.title,
+        desc: `Score: ${p.data.score}`,
+    }))
 }
 
-async function fetchTikTok(url: string): Promise<string> {
+async function fetchTikTok(url: string): Promise<FetchedItem[]> {
     const handleMatch = url.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/)
     if (!handleMatch) throw new Error('Could not extract TikTok handle. Use format: tiktok.com/@username')
     const handle = handleMatch[1]
@@ -159,7 +164,7 @@ async function fetchTikTok(url: string): Promise<string> {
     throw lastErr ?? new Error('All RSSHub instances failed for TikTok')
 }
 
-async function fetchTwitter(url: string): Promise<string> {
+async function fetchTwitter(url: string): Promise<FetchedItem[]> {
     const bearerToken = process.env.TWITTER_API_TOKEN
     if (!bearerToken) throw new Error('Twitter API token not configured')
     const handleMatch = url.match(/twitter\.com\/(@?[A-Za-z0-9_]+)/)
@@ -179,14 +184,13 @@ async function fetchTwitter(url: string): Promise<string> {
     )
     if (!tweetsRes.ok) throw new Error('Failed to fetch tweets')
     const tweets = (await tweetsRes.json())?.data || []
-    return tweets.slice(0, 8).map((t: { text?: string; public_metrics?: { like_count?: number; retweet_count?: number } }) => {
-        const text = t.text?.replace(/\n/g, ' ').slice(0, 300) || 'Tweet'
-        const likes = t.public_metrics?.like_count || 0
-        return `• ${text} [❤️ ${likes}]`
-    }).join('\n')
+    return tweets.slice(0, 8).map((t: { text?: string; public_metrics?: { like_count?: number } }) => ({
+        title: t.text?.replace(/\n/g, ' ').slice(0, 300) || 'Tweet',
+        desc: `❤️ ${t.public_metrics?.like_count || 0}`,
+    }))
 }
 
-async function fetchBluesky(url: string): Promise<string> {
+async function fetchBluesky(url: string): Promise<FetchedItem[]> {
     const handleMatch = url.match(/(?:bsky\.app\/profile\/)?(@?[a-zA-Z0-9._-]+)/)
     if (!handleMatch) throw new Error('Could not extract Bluesky handle')
     let handle = handleMatch[1]
@@ -198,14 +202,13 @@ async function fetchBluesky(url: string): Promise<string> {
     const feedRes = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}&limit=10`, { signal: AbortSignal.timeout(10000) })
     if (!feedRes.ok) throw new Error('Failed to fetch Bluesky posts')
     const posts = (await feedRes.json())?.feed || []
-    return posts.slice(0, 8).map((item: { post?: { record?: { text?: string }; likeCount?: number } }) => {
-        const text = item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 300) || 'Post'
-        const likes = item.post?.likeCount || 0
-        return `• ${text} [❤️ ${likes}]`
-    }).join('\n')
+    return posts.slice(0, 8).map((item: { post?: { record?: { text?: string }; likeCount?: number } }) => ({
+        title: item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 300) || 'Post',
+        desc: `❤️ ${item.post?.likeCount || 0}`,
+    }))
 }
 
-async function fetchSubstack(url: string): Promise<string> {
+async function fetchSubstack(url: string): Promise<FetchedItem[]> {
     let feedUrl = url
     const atMatch = url.match(/substack\.com\/@([A-Za-z0-9_-]+)/)
     if (atMatch) feedUrl = `https://${atMatch[1]}.substack.com/feed`
@@ -213,7 +216,7 @@ async function fetchSubstack(url: string): Promise<string> {
     return fetchRSS(feedUrl)
 }
 
-async function fetchGitHub(url: string): Promise<string> {
+async function fetchGitHub(url: string): Promise<FetchedItem[]> {
     const repoMatch = url.match(/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/)
     if (!repoMatch) throw new Error('Could not parse GitHub URL. Use format: github.com/owner/repo')
     const repo = repoMatch[1].replace(/\/$/, '')
@@ -221,7 +224,7 @@ async function fetchGitHub(url: string): Promise<string> {
     catch { return await fetchRSS(`https://github.com/${repo}/commits.atom`) }
 }
 
-async function fetchSourceContent(source: { type: string; url: string }): Promise<string> {
+async function fetchSourceContent(source: { type: string; url: string }): Promise<FetchedItem[]> {
     switch (source.type) {
         case 'youtube': return fetchYouTube(source.url)
         case 'reddit': return fetchReddit(source.url)
@@ -298,15 +301,15 @@ export async function POST(req: NextRequest) {
         // Fetch all sources in parallel
         const settled = await Promise.allSettled(
             typedSubject.sources.map(async (source) => {
-                const content = await fetchSourceContent(source)
-                return { source, content }
+                const items = await fetchSourceContent(source)
+                return { source, items }
             })
         )
 
         const fetched = settled
             .filter(r => r.status === 'fulfilled')
-            .map(r => (r as PromiseFulfilledResult<{ source: Source; content: string }>).value)
-            .filter(f => f.content.trim().length > 0)
+            .map(r => (r as PromiseFulfilledResult<{ source: Source; items: FetchedItem[] }>).value)
+            .filter(f => f.items.length > 0)
 
         if (fetched.length === 0) return NextResponse.json({ error: 'Could not fetch content from any source' }, { status: 422 })
 
@@ -322,12 +325,11 @@ export async function POST(req: NextRequest) {
             ? (process.env.GOOGLE_GEMINI_API_KEY_PAID || process.env.GOOGLE_GEMINI_API_KEY)
             : (process.env.GOOGLE_GEMINI_API_KEY_FREE || process.env.GOOGLE_GEMINI_API_KEY)
 
-        // Extract all titles in order
+        // Collect all titles (clean, no desc mixed in)
         const allItems: { title: string; sourceName: string }[] = []
-        for (const { source, content } of fetched) {
-            for (const line of content.split('\n').filter(l => l.startsWith('• '))) {
-                const title = line.replace(/^•\s*/, '').trim()
-                if (title) allItems.push({ title, sourceName: source.name })
+        for (const { source, items } of fetched) {
+            for (const item of items) {
+                if (item.title) allItems.push({ title: item.title, sourceName: source.name })
             }
         }
 
@@ -347,17 +349,17 @@ export async function POST(req: NextRequest) {
             console.error('[fetch-subject] Gemini descriptions error:', err)
         }
 
-        // Build formatted digest ourselves (guaranteed bold titles)
+        // Build formatted digest — bold title, AI description (or RSS desc as fallback)
         let digest = ''
         let idx = 0
-        for (const { source, content } of fetched) {
-            const lines = content.split('\n').filter(l => l.startsWith('• '))
-            if (lines.length === 0) continue
+        for (const { source, items } of fetched) {
+            if (items.length === 0) continue
             digest += `**${source.name}:**\n`
-            for (const line of lines) {
-                const title = line.replace(/^•\s*/, '').trim()
-                const desc = descriptions[idx] || ''
-                digest += `• **${title}**${desc ? ` — ${desc}` : ''}\n`
+            for (const item of items) {
+                const aiDesc = descriptions[idx] || ''
+                const fallbackDesc = item.desc || ''
+                const desc = aiDesc || fallbackDesc
+                digest += `• **${item.title}**${desc ? ` — ${desc}` : ''}\n`
                 idx++
             }
             digest += '\n'
