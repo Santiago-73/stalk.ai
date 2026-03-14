@@ -3,15 +3,6 @@ import { redirect } from 'next/navigation'
 import { FileText, Inbox } from 'lucide-react'
 import DigestCard from './DigestCard'
 
-interface Digest {
-    id: string
-    source_id: string
-    source_name: string
-    source_type: string
-    content: string
-    created_at: string
-    metadata?: any
-}
 
 
 export default async function DigestsPage() {
@@ -19,11 +10,11 @@ export default async function DigestsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/login')
 
-    const { data: digests, error } = await supabase
-        .from('digests')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+    const [{ data: digests, error }, { data: profile }] = await Promise.all([
+        supabase.from('digests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('profiles').select('plan').eq('id', user.id).single(),
+    ])
+    const userPlan = profile?.plan ?? 'free'
 
     return (
         <div style={{ padding: '36px 40px', maxWidth: '100%', width: '100%' }}>
@@ -96,7 +87,7 @@ export default async function DigestsPage() {
                         gap: 24,
                         width: '100%'
                     }}>
-                        {digests.map(d => <DigestCard key={d.id} digest={d} />)}
+                        {digests.map(d => <DigestCard key={d.id} digest={d} userPlan={userPlan} />)}
                     </div>
                 </div>
             )}

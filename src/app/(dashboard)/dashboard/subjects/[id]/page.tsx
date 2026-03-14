@@ -326,7 +326,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                             {digests.map(digest => (
-                                <DigestCard key={digest.id} digest={digest} />
+                                <DigestCard key={digest.id} digest={digest} userPlan={plan} />
                             ))}
                         </div>
                     )}
