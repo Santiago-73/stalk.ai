@@ -264,7 +264,7 @@ export default function HomePage() {
                   { icon: <Github size={18} />, name: 'GitHub', color: '#e2e8f0' },
                   { icon: <BookMarked size={18} />, name: 'Medium', color: '#00ab6c' },
                   { icon: <Tv size={18} />, name: 'Twitch', color: '#9146ff' },
-                  { icon: <FileText size={18} />, name: 'Dev.to', color: '#08090a' },
+                  { icon: <FileText size={18} />, name: 'Dev.to', color: '#e2e8f0' },
                 ].map((s, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
