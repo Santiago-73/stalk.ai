@@ -124,10 +124,10 @@ export default function HomePage() {
                 <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--text-primary)' }}>My Subjects</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                   {[
-                    { name: 'Tech News', sources: 4, types: ['#ff4444', '#10b981', '#ff6719', '#e2e8f0'], digest: '12m ago' },
-                    { name: 'AI & ML', sources: 3, types: ['#ff4444', '#1690ff', '#ff6314'], digest: '1h ago' },
-                    { name: 'Startups', sources: 3, types: ['#ff6314', '#10b981', '#ff6719'], digest: '3h ago' },
-                    { name: 'Crypto', sources: 2, types: ['#ff4444', '#ff6600'], digest: 'just now' },
+                    { name: 'Tecnología', sources: 4, types: ['#ff4444', '#10b981', '#ff6719', '#e2e8f0'], digest: 'hace 12m' },
+                    { name: 'IA & Robótica', sources: 3, types: ['#ff4444', '#1690ff', '#ff6314'], digest: 'hace 1h' },
+                    { name: 'Startups', sources: 3, types: ['#ff6314', '#10b981', '#ff6719'], digest: 'hace 3h' },
+                    { name: 'Cripto', sources: 2, types: ['#ff4444', '#ff6600'], digest: 'ahora' },
                   ].map((s, i) => (
                     <div key={i} style={{
                       padding: '14px 16px', borderRadius: 10,
@@ -155,7 +155,7 @@ export default function HomePage() {
                 {/* Mini digest preview */}
                 <div style={{ marginTop: 14, padding: '14px 16px', borderRadius: 10, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-bright)' }}>✨ AI Digest — Tech News</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-bright)' }}>✨ AI Digest — Tecnología</span>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>just now</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -319,7 +319,7 @@ export default function HomePage() {
                 features: [
                   'Hasta 3 subjects',
                   'YouTube, Bluesky, HN & RSS',
-                  'Digests con IA (modelo lite)',
+                  'IA digest',
                   'Dashboard básico',
                 ],
                 cta: 'Start for free',
@@ -337,7 +337,7 @@ export default function HomePage() {
                   'Formato rico con links y contexto',
                   'Acceso prioritario a nuevas plataformas',
                 ],
-                cta: 'Get Pro',
+                cta: 'Obtener Pro',
                 href: '/signup',
                 highlight: true
               },
