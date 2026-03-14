@@ -335,7 +335,7 @@ export default function SourcesPage() {
                                     background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
                                     fontSize: 12, color: '#ca8a04', lineHeight: 1.5
                                 }}>
-                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> puede ser inestable — estas plataformas bloquean peticiones de servidores cloud con frecuencia. Puede fallar ocasionalmente.
+                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> may be unstable — these platforms frequently block requests from cloud servers. It may fail occasionally.
                                 </div>
                             )}
                         </div>

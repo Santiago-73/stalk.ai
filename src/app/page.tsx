@@ -66,8 +66,8 @@ export default function HomePage() {
             fontSize: 20, color: 'var(--text-secondary)', maxWidth: 580,
             margin: '0 auto 48px', lineHeight: 1.7, fontWeight: 400
           }}>
-            Crea subjects con tus fuentes favoritas — YouTube, Bluesky, RSS, Substack y más.
-            Stalk.ai genera resúmenes con IA para que siempre estés al día.
+            Create subjects from your favorite sources — YouTube, Bluesky, RSS, Substack and more.
+            Stalk.ai generates AI summaries so you never miss what matters.
           </p>
 
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -124,10 +124,10 @@ export default function HomePage() {
                 <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--text-primary)' }}>My Subjects</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                   {[
-                    { name: 'Tecnología', sources: 4, types: ['#ff4444', '#10b981', '#ff6719', '#e2e8f0'], digest: 'hace 12m' },
-                    { name: 'IA & Robótica', sources: 3, types: ['#ff4444', '#1690ff', '#ff6314'], digest: 'hace 1h' },
-                    { name: 'Startups', sources: 3, types: ['#ff6314', '#10b981', '#ff6719'], digest: 'hace 3h' },
-                    { name: 'Cripto', sources: 2, types: ['#ff4444', '#ff6600'], digest: 'ahora' },
+                    { name: 'Technology', sources: 4, types: ['#ff4444', '#10b981', '#ff6719', '#e2e8f0'], digest: '12m ago' },
+                    { name: 'AI & ML', sources: 3, types: ['#ff4444', '#1690ff', '#ff6314'], digest: '1h ago' },
+                    { name: 'Startups', sources: 3, types: ['#ff6314', '#10b981', '#ff6719'], digest: '3h ago' },
+                    { name: 'Crypto', sources: 2, types: ['#ff4444', '#ff6600'], digest: 'just now' },
                   ].map((s, i) => (
                     <div key={i} style={{
                       padding: '14px 16px', borderRadius: 10,
@@ -155,14 +155,14 @@ export default function HomePage() {
                 {/* Mini digest preview */}
                 <div style={{ marginTop: 14, padding: '14px 16px', borderRadius: 10, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-bright)' }}>✨ AI Digest — Tecnología</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-bright)' }}>✨ AI Digest — Technology</span>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 'auto' }}>just now</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                     {[
-                      '🔥 OpenAI lanza GPT-5 con capacidades multimodales avanzadas',
-                      '📈 GitHub Copilot supera los 2M de usuarios de pago',
-                      '💡 Takeaway: La IA sigue dominando el ciclo de noticias tech esta semana.',
+                      '🔥 OpenAI releases GPT-5 with advanced multimodal capabilities',
+                      '📈 GitHub Copilot surpasses 2M paid users',
+                      '💡 Takeaway: AI continues to dominate the tech news cycle this week.',
                     ].map((line, i) => (
                       <div key={i} style={{ fontSize: 11, color: i === 2 ? 'var(--accent-bright)' : 'var(--text-secondary)', lineHeight: 1.5 }}>
                         {line}
@@ -191,20 +191,20 @@ export default function HomePage() {
             {[
               {
                 icon: <Zap size={24} />,
-                title: 'Subjects inteligentes',
-                desc: 'Agrupa varias fuentes bajo un mismo tema. Genera un digest unificado de todo lo que importa.',
+                title: 'Smart subjects',
+                desc: 'Group multiple sources under one topic. Generate a unified digest of everything that matters.',
                 color: '#f59e0b'
               },
               {
                 icon: <Sparkles size={24} />,
-                title: 'Resúmenes con IA',
-                desc: 'Sin paredes de texto. La IA extrae los puntos clave con contexto, links y conclusiones.',
+                title: 'AI-powered summaries',
+                desc: 'No more walls of text. AI extracts the key points with context, links and conclusions.',
                 color: '#7c3aed'
               },
               {
                 icon: <Bell size={24} />,
-                title: 'Siempre actualizado',
-                desc: 'Genera digests cuando quieras. Cero ruido, máxima señal — solo lo que de verdad importa.',
+                title: 'Always up to date',
+                desc: 'Generate digests whenever you want. Zero noise, maximum signal — only what truly matters.',
                 color: '#10b981'
               },
             ].map((f, i) => (
@@ -225,13 +225,13 @@ export default function HomePage() {
           {/* Platforms */}
           <div style={{ marginTop: 64 }}>
             <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 28, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, textAlign: 'center' }}>
-              Plataformas soportadas
+              Supported platforms
             </p>
 
             {/* Free */}
             <div style={{ marginBottom: 20 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, textAlign: 'center' }}>
-                Plan Free
+                Free plan
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
                 {[
@@ -254,7 +254,7 @@ export default function HomePage() {
             {/* Pro */}
             <div style={{ marginBottom: 20 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, textAlign: 'center' }}>
-                ⚡ Plan Pro
+                ⚡ Pro plan
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
                 {[
@@ -280,7 +280,7 @@ export default function HomePage() {
             {/* Coming soon */}
             <div>
               <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                <Clock size={11} /> Próximamente
+                <Clock size={11} /> Coming soon
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
                 {[
@@ -315,12 +315,12 @@ export default function HomePage() {
               {
                 name: 'Free',
                 price: '0',
-                desc: 'Perfecto para empezar',
+                desc: 'Perfect to get started',
                 features: [
-                  'Hasta 3 subjects',
+                  'Up to 3 subjects',
                   'YouTube, Bluesky, HN & RSS',
-                  'IA digest',
-                  'Dashboard básico',
+                  'AI digest',
+                  'Basic dashboard',
                 ],
                 cta: 'Start for free',
                 href: '/signup',
@@ -329,28 +329,28 @@ export default function HomePage() {
               {
                 name: 'Pro',
                 price: '9',
-                desc: 'Para usuarios que necesitan más',
+                desc: 'For users who need more',
                 features: [
-                  'Hasta 50 subjects',
+                  'Up to 50 subjects',
                   'Reddit, TikTok, Substack & GitHub',
-                  'Digests con IA avanzada (Gemini 2.5)',
-                  'Formato rico con links y contexto',
-                  'Acceso prioritario a nuevas plataformas',
+                  'Advanced AI digests (Gemini 2.5)',
+                  'Rich format with links and context',
+                  'Early access to new platforms',
                 ],
-                cta: 'Obtener Pro',
+                cta: 'Get Pro',
                 href: '/signup',
                 highlight: true
               },
               {
                 name: 'Ultra',
                 price: '19',
-                desc: 'Sin límites',
+                desc: 'No limits',
                 features: [
-                  'Subjects ilimitados',
-                  'Todas las plataformas',
-                  'IA más potente',
+                  'Unlimited subjects',
+                  'All platforms',
+                  'Most powerful AI',
                   'API access (coming soon)',
-                  'Soporte prioritario',
+                  'Priority support',
                 ],
                 cta: 'Get Ultra',
                 href: '/signup',

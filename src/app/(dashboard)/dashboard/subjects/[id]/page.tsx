@@ -419,7 +419,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                                     <Clock size={10} style={{ color: 'var(--text-muted)' }} />
                                     <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                                        Próximamente
+                                        Coming soon
                                     </span>
                                     <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                                 </div>
@@ -427,7 +427,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                     {(Object.keys(typeConfig) as SourceType[]).filter(t => typeConfig[t].comingSoon).map(type => {
                                         const c = typeConfig[type]
                                         return (
-                                            <button key={type} disabled title="Próximamente" style={{
+                                            <button key={type} disabled title="Coming soon" style={{
                                                 padding: '10px 6px', borderRadius: 10, cursor: 'not-allowed',
                                                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                                                 background: 'var(--bg-secondary)', border: '1px solid var(--border)',
@@ -448,7 +448,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                     background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
                                     fontSize: 11, color: '#fbbf24', textDecoration: 'none', fontWeight: 600
                                 }}>
-                                    ⚡ Upgrade to Pro para desbloquear Reddit, TikTok, Substack & GitHub →
+                                    ⚡ Upgrade to Pro to unlock Reddit, TikTok, Substack & GitHub →
                                 </a>
                             )}
                             {plan !== 'free' && (selectedType === 'reddit' || selectedType === 'tiktok') && (
@@ -457,7 +457,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                     background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
                                     fontSize: 11, color: '#ca8a04', lineHeight: 1.5
                                 }}>
-                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> puede ser inestable — bloquea peticiones de servidores cloud con frecuencia.
+                                    ⚠️ <strong>{typeConfig[selectedType].label}</strong> may be unstable — this platform frequently blocks requests from cloud servers.
                                 </div>
                             )}
                         </div>
