@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   Eye, Zap, Bell, TrendingUp, Youtube, MessageSquare, Rss,
-  Check, ArrowRight, Radio, Music, Github, BookOpen, Twitter, Instagram, Clock, Sparkles, BookMarked
+  Check, ArrowRight, Radio, Music, Github, BookOpen, Twitter, Instagram, Clock, Sparkles, BookMarked, Tv, FileText
 } from 'lucide-react'
 
 export default function HomePage() {
@@ -262,6 +262,9 @@ export default function HomePage() {
                   { icon: <Music size={18} />, name: 'TikTok', color: '#ff0050' },
                   { icon: <BookOpen size={18} />, name: 'Substack', color: '#ff6719' },
                   { icon: <Github size={18} />, name: 'GitHub', color: '#e2e8f0' },
+                  { icon: <BookMarked size={18} />, name: 'Medium', color: '#00ab6c' },
+                  { icon: <Tv size={18} />, name: 'Twitch', color: '#9146ff' },
+                  { icon: <FileText size={18} />, name: 'Dev.to', color: '#08090a' },
                 ].map((s, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
