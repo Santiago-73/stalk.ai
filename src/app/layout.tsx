@@ -4,11 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Stalk.ai – Monitor Everything, Miss Nothing",
   description: "Track YouTube channels, Reddit threads, blogs and more. Get AI-powered daily digests so you never miss what matters.",
-  icons: {
-    icon: "/logo.svg",
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
-  },
   openGraph: {
     title: "Stalk.ai – Monitor Everything, Miss Nothing",
     description: "Track YouTube channels, Reddit threads, blogs and more. Get AI-powered daily digests so you never miss what matters.",
