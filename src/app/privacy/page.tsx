@@ -14,7 +14,7 @@ export default function PrivacyPage() {
                 {[
                     {
                         title: '1. Who we are',
-                        body: 'Stalk.ai is an AI-powered content monitoring service. We aggregate public content from social media and RSS feeds and generate AI summaries for our users. Our service is operated by an individual developer based in Spain/Europe.'
+                        body: 'Stalk.ai is operated by Santiago Espinosa García, based in Spain. We provide an AI-powered content monitoring service that aggregates public content from social media and RSS feeds and generates AI summaries for our users.'
                     },
                     {
                         title: '2. What data we collect',
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
                     },
                     {
                         title: '8. Contact',
-                        body: 'For any privacy-related questions or requests, contact us at: privacy@stalk-ai.com'
+                        body: 'For any privacy-related questions or requests, contact us at: sanespi012@gmail.com'
                     },
                 ].map((section, i) => (
                     <div key={i} style={{ marginBottom: 40, paddingBottom: 40, borderBottom: i < 7 ? '1px solid var(--border)' : 'none' }}>
