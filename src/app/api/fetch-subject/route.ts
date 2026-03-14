@@ -396,6 +396,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No sources in this subject' }, { status: 422 })
         }
 
+        // Check daily digest limit per subject
+        const { data: planData } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+        const plan = planData?.plan ?? 'free'
+        const dailyLimit = plan === 'ultra' ? Infinity : plan === 'pro' ? 3 : 1
+
+        if (dailyLimit !== Infinity) {
+            const startOfDay = new Date()
+            startOfDay.setHours(0, 0, 0, 0)
+            const { count } = await supabase
+                .from('digests')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+                .eq('subject_id', subject_id)
+                .gte('created_at', startOfDay.toISOString())
+            if ((count ?? 0) >= dailyLimit) {
+                const limitLabel = dailyLimit === 1 ? '1 digest per subject per day' : `${dailyLimit} digests per subject per day`
+                return NextResponse.json({ error: `Daily limit reached. Your plan allows ${limitLabel}.` }, { status: 429 })
+            }
+        }
+
         // Fetch all sources in parallel
         const settled = await Promise.allSettled(
             typedSubject.sources.map(async (source) => {
@@ -415,9 +435,7 @@ export async function POST(req: NextRequest) {
             ? `${typedSubject.name} (${typedSubject.description})`
             : typedSubject.name
 
-        // Get user plan
-        const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
-        const isPremium = profile?.plan === 'pro' || profile?.plan === 'ultra'
+        const isPremium = plan === 'pro' || plan === 'ultra'
 
         const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID
             || process.env.GOOGLE_GEMINI_API_KEY
