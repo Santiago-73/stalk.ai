@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Rss, Twitter, TrendingUp, Music, FileText, Github, BookOpen, Zap, Instagram, Clock,
-    Twitch, Linkedin, AtSign, Code2, Newspaper
+    Youtube, MessageSquare, Rss, TrendingUp, Zap,
+    Twitch
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok' | 'substack' | 'github' | 'instagram' | 'medium' | 'twitch' | 'devto' | 'threads' | 'linkedin'
+type SourceType = 'youtube' | 'reddit' | 'rss' | 'hackernews' | 'twitch'
 
 interface Source {
     id: string
@@ -36,25 +36,13 @@ interface Subject {
     description: string
 }
 
-const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean; comingSoon?: boolean }> = {
-    youtube:    { icon: <Youtube size={15} />,       color: '#ff4444', label: 'YouTube',      placeholder: 'https://youtube.com/@channelname' },
-    bluesky:    { icon: <MessageSquare size={15} />, color: '#1690ff', label: 'Bluesky',      placeholder: 'https://bsky.app/profile/@username' },
-    hackernews: { icon: <TrendingUp size={15} />,    color: '#ff6600', label: 'Hacker News',  placeholder: 'https://news.ycombinator.com/top' },
-    rss:        { icon: <Rss size={15} />,           color: '#10b981', label: 'RSS / Blog',   placeholder: 'https://example.com/feed.xml' },
+const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean }> = {
+    youtube:    { icon: <Youtube size={15} />,       color: '#ff4444', label: 'YouTube',     placeholder: 'https://youtube.com/@channelname' },
+    hackernews: { icon: <TrendingUp size={15} />,    color: '#ff6600', label: 'Hacker News', placeholder: 'https://news.ycombinator.com/top' },
+    rss:        { icon: <Rss size={15} />,           color: '#10b981', label: 'RSS / Blog',  placeholder: 'https://example.com/feed.xml' },
     // Pro-only
-    reddit:   { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',    placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
-    tiktok:   { icon: <Music size={15} />,          color: '#ff0050', label: 'TikTok',    placeholder: 'https://tiktok.com/@username',  proOnly: true },
-    substack: { icon: <BookOpen size={15} />,       color: '#ff6719', label: 'Substack',  placeholder: 'https://username.substack.com', proOnly: true },
-    github:   { icon: <Github size={15} />,         color: '#e2e8f0', label: 'GitHub',    placeholder: 'https://github.com/owner/repo', proOnly: true },
-    // Pro-only (new)
-    medium:  { icon: <Newspaper size={15} />,  color: '#000000', label: 'Medium',    placeholder: 'https://medium.com/@username',   proOnly: true },
-    twitch:  { icon: <Twitch size={15} />,     color: '#9146ff', label: 'Twitch',    placeholder: 'https://twitch.tv/username',     proOnly: true },
-    devto:   { icon: <Code2 size={15} />,      color: '#3b49df', label: 'Dev.to',    placeholder: 'https://dev.to/username',        proOnly: true },
-    // Coming soon
-    twitter:   { icon: <Twitter size={15} />,    color: '#1da9f0', label: 'Twitter/X',  placeholder: '', comingSoon: true },
-    instagram: { icon: <Instagram size={15} />,  color: '#e1306c', label: 'Instagram',   placeholder: '', comingSoon: true },
-    threads:   { icon: <AtSign size={15} />,     color: '#000000', label: 'Threads',     placeholder: '', comingSoon: true },
-    linkedin:  { icon: <Linkedin size={15} />,   color: '#0077b5', label: 'LinkedIn',    placeholder: '', comingSoon: true },
+    reddit: { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit', placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
+    twitch: { icon: <Twitch size={15} />,        color: '#9146ff', label: 'Twitch', placeholder: 'https://twitch.tv/username',     proOnly: true },
 }
 
 
@@ -315,7 +303,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                 width: 56, height: 56, borderRadius: 14, margin: '0 auto 16px',
                                 background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <FileText size={26} color="#10b981" />
+                                <Rss size={26} color="#10b981" />
                             </div>
                             <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
                                 {sources.length === 0
@@ -355,7 +343,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                             </label>
                             {/* Free platforms */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
-                                {(Object.keys(typeConfig) as SourceType[]).filter(t => !typeConfig[t].proOnly && !typeConfig[t].comingSoon).map(type => {
+                                {(Object.keys(typeConfig) as SourceType[]).filter(t => !typeConfig[t].proOnly).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type
                                     return (
@@ -386,7 +374,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                         const c = typeConfig[type]
                                         const active = selectedType === type
                                         const locked = plan === 'free'
-                                        const unstable = type === 'reddit' || type === 'tiktok'
+                                        const unstable = type === 'reddit'
                                         return (
                                             <button key={type}
                                                 onClick={() => !locked && setSelectedType(type)}
@@ -414,44 +402,16 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                                     })}
                                 </div>
                             </div>
-                            {/* Coming soon */}
-                            <div style={{ marginTop: 10 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                                    <Clock size={10} style={{ color: 'var(--text-muted)' }} />
-                                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                                        Coming soon
-                                    </span>
-                                    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                                    {(Object.keys(typeConfig) as SourceType[]).filter(t => typeConfig[t].comingSoon).map(type => {
-                                        const c = typeConfig[type]
-                                        return (
-                                            <button key={type} disabled title="Coming soon" style={{
-                                                padding: '10px 6px', borderRadius: 10, cursor: 'not-allowed',
-                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-                                                color: 'var(--text-muted)', opacity: 0.45,
-                                                fontFamily: 'inherit', position: 'relative',
-                                            }}>
-                                                {c.icon}
-                                                <span style={{ fontSize: 10, fontWeight: 600 }}>{c.label}</span>
-                                            </button>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-
                             {plan === 'free' && (
                                 <a href="/settings" style={{
                                     display: 'block', marginTop: 8, padding: '8px 12px', borderRadius: 8, textAlign: 'center',
                                     background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)',
                                     fontSize: 11, color: '#fbbf24', textDecoration: 'none', fontWeight: 600
                                 }}>
-                                    ⚡ Upgrade to Pro to unlock Reddit, TikTok, Substack & GitHub →
+                                    ⚡ Upgrade to Pro to unlock Reddit & Twitch →
                                 </a>
                             )}
-                            {plan !== 'free' && (selectedType === 'reddit' || selectedType === 'tiktok') && (
+                            {plan !== 'free' && selectedType === 'reddit' && (
                                 <div style={{
                                     marginTop: 6, padding: '8px 12px', borderRadius: 8,
                                     background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',
