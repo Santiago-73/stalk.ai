@@ -51,7 +51,7 @@ export default async function SettingsPage() {
                     </div>
                     <div style={{ padding: '12px 16px', background: 'var(--bg-primary)', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>
-                            <strong>Sources limit:</strong> {currentPlan === 'ultra' ? 'Unlimited' : currentPlan === 'pro' ? '50 max' : '5 max'}
+                            <strong>Subjects limit:</strong> {currentPlan === 'ultra' ? 'Unlimited' : currentPlan === 'pro' ? '50 max' : '3 max'}
                         </div>
                         <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                             <strong>Digests:</strong> {currentPlan === 'free' ? 'Weekly (Sundays, no AI)' : 'Daily with AI Summaries'}
