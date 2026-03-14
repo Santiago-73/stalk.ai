@@ -4,7 +4,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
             <Sidebar />
-            <main style={{ marginLeft: 230, flex: 1, padding: '40px', maxWidth: 'calc(100vw - 230px)' }}>
+            <main className="dashboard-main">
                 {children}
             </main>
         </div>

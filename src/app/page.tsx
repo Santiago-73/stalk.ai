@@ -8,7 +8,7 @@ export default function HomePage() {
   return (
     <div style={{ background: 'var(--bg-primary)', minHeight: '100vh' }}>
       {/* Navbar */}
-      <nav style={{
+      <nav className="lp-nav" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '20px 40px', borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, zIndex: 100,
@@ -26,7 +26,7 @@ export default function HomePage() {
             Stalk<span style={{ color: 'var(--accent-bright)' }}>.ai</span>
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="lp-nav-links" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <Link href="/login" className="btn-secondary" style={{ padding: '8px 16px' }}>Log in</Link>
           <Link href="/signup" className="btn-primary" style={{ padding: '8px 18px' }}>
             Start free <ArrowRight size={14} />
@@ -35,7 +35,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero */}
-      <section className="noise-bg" style={{ padding: '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <section className="noise-bg lp-hero" style={{ padding: '100px 40px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{
           position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)',
           width: 600, height: 600, borderRadius: '50%',
@@ -85,7 +85,7 @@ export default function HomePage() {
         </div>
 
         {/* Mock UI preview — new dashboard style */}
-        <div style={{ maxWidth: 960, margin: '80px auto 0', position: 'relative' }}>
+        <div className="lp-mock-preview" style={{ maxWidth: 960, margin: '80px auto 0', position: 'relative' }}>
           <div className="card glow" style={{
             padding: 2, borderRadius: 20, overflow: 'hidden',
             border: '1px solid rgba(124,58,237,0.3)'
@@ -177,7 +177,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section style={{ padding: '100px 40px', borderTop: '1px solid var(--border)' }}>
+      <section className="lp-section" style={{ padding: '100px 40px', borderTop: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <h2 style={{ fontSize: 42, fontWeight: 800, marginBottom: 16, letterSpacing: '-1px' }}>
@@ -187,7 +187,7 @@ export default function HomePage() {
               Everything you care about, in one smart feed.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="lp-features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {[
               {
                 icon: <Zap size={24} />,
@@ -302,7 +302,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={{ padding: '100px 40px', borderTop: '1px solid var(--border)' }}>
+      <section id="pricing" className="lp-section" style={{ padding: '100px 40px', borderTop: '1px solid var(--border)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <h2 style={{ fontSize: 42, fontWeight: 800, marginBottom: 16, letterSpacing: '-1px' }}>
@@ -310,7 +310,7 @@ export default function HomePage() {
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 18 }}>Start free, upgrade when you need more.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, alignItems: 'start' }}>
+          <div className="lp-pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, alignItems: 'start' }}>
             {[
               {
                 name: 'Free',
@@ -398,7 +398,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer style={{
+      <footer className="lp-footer" style={{
         borderTop: '1px solid var(--border)', padding: '40px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         color: 'var(--text-muted)', fontSize: 14
@@ -408,7 +408,7 @@ export default function HomePage() {
           <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>Stalk.ai</span>
         </div>
         <span>© 2026 Stalk.ai. All rights reserved.</span>
-        <div style={{ display: 'flex', gap: 24 }}>
+        <div className="lp-footer-links" style={{ display: 'flex', gap: 24 }}>
           <Link href="/login" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Login</Link>
           <Link href="/signup" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Sign up</Link>
           <Link href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</Link>

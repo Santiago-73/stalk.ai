@@ -193,7 +193,81 @@ body {
 
 /* Grid noise texture */
 .noise-bg {
-  background-image: 
+  background-image:
     radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(232, 121, 249, 0.1) 0%, transparent 40%);
+}
+
+/* ── Dashboard layout ───────────────────────────────────────────────────────── */
+.dashboard-main {
+  margin-left: 230px;
+  flex: 1;
+  padding: 40px;
+  max-width: calc(100vw - 230px);
+}
+
+.mobile-nav {
+  display: none;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Dashboard sidebar → hide, show bottom nav */
+  .sidebar-aside {
+    display: none !important;
+  }
+  .dashboard-main {
+    margin-left: 0 !important;
+    max-width: 100vw !important;
+    padding: 20px 16px 84px !important;
+  }
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px;
+  }
+
+  /* Landing page */
+  .lp-nav {
+    padding: 14px 20px !important;
+  }
+  .lp-nav-links .btn-secondary {
+    display: none;
+  }
+  .lp-hero {
+    padding: 60px 20px 40px !important;
+  }
+  .lp-mock-preview {
+    display: none !important;
+  }
+  .lp-section {
+    padding: 60px 20px !important;
+  }
+  .lp-features-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .lp-pricing-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .lp-footer {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 16px !important;
+    padding: 32px 20px !important;
+    text-align: center !important;
+  }
+  .lp-footer-links {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+  }
 }
