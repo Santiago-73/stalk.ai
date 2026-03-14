@@ -338,7 +338,7 @@ export default function HomePage() {
                   'Early access to new platforms',
                 ],
                 cta: 'Get Pro',
-                href: '/signup',
+                href: '/api/stripe/checkout?plan=pro',
                 highlight: true
               },
               {
@@ -353,7 +353,7 @@ export default function HomePage() {
                   'Priority support',
                 ],
                 cta: 'Get Ultra',
-                href: '/signup',
+                href: '/api/stripe/checkout?plan=ultra',
                 highlight: false
               }
             ].map((plan, i) => (
