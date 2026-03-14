@@ -508,12 +508,34 @@ export async function POST(req: NextRequest) {
             digest += '\n'
         }
 
-        // Add takeaway for all tiers
+        // Add trend analysis for all tiers
         if (allItems.length > 0 && apiKey) {
             try {
-                const takeawayPrompt = `Based on these recent posts from ${subjectContext}: "${allItems.map(t => t.title).join(' | ')}" — write ONE sentence (max 25 words) summarizing the overall recent activity. Write in the same language as the titles.`
+                let idx2 = 0
+                const sourceLines = fetched.flatMap(({ source, items }) =>
+                    items.map(item => {
+                        const desc = descriptions[idx2++] || item.desc || ''
+                        return `[${source.name}] ${item.title}${desc ? ` — ${desc}` : ''}`
+                    })
+                ).join('\n')
+
+                const takeawayPrompt = `You are a trend analyst for content creators.
+
+Below are the most recent posts/videos from multiple sources about ${subjectContext}. Analyze them together and provide:
+
+1. **Main trend this week** (1-2 sentences): What topic or format is gaining traction across these sources right now?
+
+2. **What creators should know** (1-2 sentences): What is the audience engaging with? What angle is working?
+
+3. **Actionable insight** (1 sentence): One specific thing a creator in this niche could do with this information.
+
+Write in the same language as the content. Be specific, not generic. If there is not enough data, say so honestly.
+
+Sources:
+${sourceLines}`
+
                 const takeaway = await geminiGenerate(takeawayPrompt, apiKey, isPremium)
-                digest += `**💡 Takeaway:** ${takeaway.trim().replace(/^["']|["']$/g, '')}`
+                digest += `**💡 Trend Analysis:**\n${takeaway.trim()}`
             } catch { /* skip takeaway on error */ }
         }
 
