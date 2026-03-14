@@ -197,7 +197,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     <ArrowLeft size={14} /> Subjects
                 </Link>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="subject-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <div style={{
                             width: 52, height: 52, borderRadius: 14,
@@ -229,7 +229,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 28, alignItems: 'start' }}>
+            <div className="subject-layout-grid" style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 28, alignItems: 'start' }}>
                 {/* Sources panel */}
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -324,7 +324,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                             </p>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                        <div className="subject-digests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                             {digests.map(digest => (
                                 <DigestCard key={digest.id} digest={digest} userPlan={plan} />
                             ))}
@@ -339,7 +339,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
                 }} onClick={() => setShowModal(false)}>
-                    <div className="card" onClick={e => e.stopPropagation()} style={{
+                    <div className="card subject-modal" onClick={e => e.stopPropagation()} style={{
                         width: '100%', maxWidth: 500, padding: 32, borderRadius: 20,
                         border: '1px solid var(--border-bright)'
                     }}>

@@ -255,6 +255,23 @@ body {
   .lp-pricing-grid {
     grid-template-columns: 1fr !important;
   }
+  /* Subject detail page */
+  .subject-layout-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .subject-header {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+  .subject-digests-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .subject-modal {
+    margin: 16px !important;
+    max-height: calc(100vh - 100px) !important;
+    overflow-y: auto !important;
+  }
+
   /* Dashboard grids */
   .dash-actions-grid {
     grid-template-columns: 1fr !important;
