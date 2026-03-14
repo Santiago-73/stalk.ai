@@ -399,7 +399,7 @@ export async function POST(req: NextRequest) {
         // Check daily digest limit per subject
         const { data: planData } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
         const plan = planData?.plan ?? 'free'
-        const dailyLimit = plan === 'ultra' ? Infinity : plan === 'pro' ? 3 : 1
+        const dailyLimit = plan === 'free' ? 1 : Infinity
 
         if (dailyLimit !== Infinity) {
             const startOfDay = new Date()
