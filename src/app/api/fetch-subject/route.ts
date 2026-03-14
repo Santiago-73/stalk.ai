@@ -277,16 +277,29 @@ async function fetchTwitch(url: string): Promise<FetchedItem[]> {
     if (!userRes.ok) throw new Error('Twitch user not found')
     const userId = (await userRes.json())?.data?.[0]?.id
     if (!userId) throw new Error('Could not find Twitch user')
-    // Get recent videos
+    // Get recent videos (all types: archive, highlight, upload)
     const videosRes = await fetch(
-        `https://api.twitch.tv/helix/videos?user_id=${userId}&type=archive&first=4`,
+        `https://api.twitch.tv/helix/videos?user_id=${userId}&first=4`,
         { headers, signal: AbortSignal.timeout(8000) }
     )
     if (!videosRes.ok) throw new Error('Failed to fetch Twitch videos')
     const videos = (await videosRes.json())?.data || []
-    return videos.map((v: { title?: string; view_count?: number }) => ({
-        title: v.title || 'Stream',
-        desc: v.view_count ? `👁 ${v.view_count.toLocaleString()} views` : '',
+    if (videos.length > 0) {
+        return videos.map((v: { title?: string; view_count?: number }) => ({
+            title: v.title || 'Stream',
+            desc: v.view_count ? `👁 ${v.view_count.toLocaleString()} views` : '',
+        }))
+    }
+    // Fallback: recent clips
+    const clipsRes = await fetch(
+        `https://api.twitch.tv/helix/clips?broadcaster_id=${userId}&first=4`,
+        { headers, signal: AbortSignal.timeout(8000) }
+    )
+    if (!clipsRes.ok) throw new Error('Failed to fetch Twitch clips')
+    const clips = (await clipsRes.json())?.data || []
+    return clips.map((c: { title?: string; view_count?: number }) => ({
+        title: c.title || 'Clip',
+        desc: c.view_count ? `👁 ${c.view_count.toLocaleString()} views` : '',
     }))
 }
 
