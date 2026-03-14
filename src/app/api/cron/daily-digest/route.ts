@@ -202,11 +202,9 @@ export async function GET(req: NextRequest) {
             const email = authUser?.user?.email
             if (!email) continue
 
-            // Only Pro and Ultra get daily emails
-            if (profile.plan === 'free') {
-                console.log(`[cron] Skipping free user ${profile.id}`)
-                continue
-            }
+            // Free → no emails. Pro → Sundays only. Ultra → daily
+            if (profile.plan === 'free') continue
+            if (profile.plan === 'pro' && new Date().getDay() !== 0) continue
 
             // Fetch subjects with their sources
             const { data: subjects } = await supabase
