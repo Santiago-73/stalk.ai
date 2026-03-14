@@ -256,11 +256,17 @@ body {
     grid-template-columns: 1fr !important;
   }
   /* Dashboard grids */
-  .dash-stats-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
   .dash-actions-grid {
     grid-template-columns: 1fr !important;
+  }
+  .dash-digests-container {
+    padding: 20px 0 !important;
+  }
+  .dash-digests-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .dash-stat-value {
+    font-size: 22px !important;
   }
 
   .lp-footer {

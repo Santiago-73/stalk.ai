@@ -130,7 +130,7 @@ export default async function DashboardPage() {
                                 </Link>
                             )}
                         </div>
-                        <div style={{ fontSize: 32, fontWeight: 800, marginBottom: 4 }}>{stat.value}</div>
+                        <div className="dash-stat-value" style={{ fontSize: 32, fontWeight: 800, marginBottom: 4 }}>{stat.value}</div>
                         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{stat.label}</div>
                     </div>
                 ))}

@@ -17,7 +17,7 @@ export default async function DigestsPage() {
     const userPlan = profile?.plan ?? 'free'
 
     return (
-        <div style={{ padding: '36px 40px', maxWidth: '100%', width: '100%' }}>
+        <div className="dash-digests-container" style={{ padding: '36px 40px', maxWidth: '100%', width: '100%' }}>
             {/* Header */}
             <div style={{ marginBottom: 40 }}>
                 <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>
@@ -81,7 +81,7 @@ export default async function DigestsPage() {
                         <FileText size={13} style={{ verticalAlign: 'middle' }} />
                         {digests.length} digest{digests.length !== 1 ? 's' : ''} total
                     </div>
-                    <div style={{
+                    <div className="dash-digests-grid" style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
                         gap: 24,
