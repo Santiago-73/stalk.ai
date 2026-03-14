@@ -137,7 +137,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Quick actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 36 }}>
+            <div className="dash-actions-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 36 }}>
                 <Link href="/dashboard/subjects" style={{ textDecoration: 'none' }}>
                     <div className="card" style={{
                         padding: 24, cursor: 'pointer', transition: 'border-color 0.15s',

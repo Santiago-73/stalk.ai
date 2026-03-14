@@ -240,9 +240,6 @@ body {
   .lp-nav {
     padding: 14px 20px !important;
   }
-  .lp-nav-links .btn-secondary {
-    display: none;
-  }
   .lp-hero {
     padding: 60px 20px 40px !important;
   }
@@ -258,6 +255,14 @@ body {
   .lp-pricing-grid {
     grid-template-columns: 1fr !important;
   }
+  /* Dashboard grids */
+  .dash-stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .dash-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+
   .lp-footer {
     flex-direction: column !important;
     align-items: center !important;
