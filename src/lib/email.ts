@@ -2,36 +2,40 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-interface DigestItem {
-    source_name: string
-    source_type: string
+export interface DigestItem {
+    subject_name: string
     content: string
 }
 
-function sourceEmoji(type: string) {
-    if (type === 'youtube') return '📺'
-    if (type === 'reddit') return '👾'
-    return '📡'
-}
-
-function formatBullets(content: string): string {
+function formatContent(content: string): string {
     return content
         .split('\n')
-        .filter(l => l.trim().startsWith('•') || l.trim().startsWith('-'))
-        .map(l => `<li style="margin:6px 0;color:#d1d5db;line-height:1.6;">${l.replace(/^[-•]\s*/, '')}</li>`)
+        .map(line => {
+            const t = line.trim()
+            if (!t) return ''
+            if (t.startsWith('**') && t.endsWith('**')) {
+                const label = t.slice(2, -2)
+                return `<p style="margin:16px 0 6px;font-size:13px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:0.05em;">${label}</p>`
+            }
+            if (t.startsWith('**') && t.includes(':**')) {
+                const rest = t.replace(/\*\*/g, '')
+                return `<p style="margin:14px 0 4px;font-size:14px;font-weight:700;color:#e2e8f0;">${rest}</p>`
+            }
+            if (t.startsWith('•')) {
+                const text = t.slice(1).trim()
+                return `<li style="margin:5px 0;color:#d1d5db;line-height:1.6;font-size:14px;">${text}</li>`
+            }
+            return `<p style="margin:4px 0;color:#9ca3af;font-size:13px;">${t}</p>`
+        })
         .join('')
 }
 
 function buildEmailHTML(digests: DigestItem[]): string {
     const sections = digests.map(d => `
     <div style="background:#1e1b2e;border:1px solid #2e2b3e;border-radius:12px;padding:24px;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:18px;">${sourceEmoji(d.source_type)}</span>
-        <h2 style="margin:0;font-size:16px;font-weight:700;color:#f3f4f6;">${d.source_name}</h2>
-        <span style="margin-left:auto;font-size:11px;padding:2px 8px;border-radius:12px;background:#2d1b69;color:#a78bfa;font-weight:600;text-transform:uppercase;">${d.source_type}</span>
-      </div>
+      <h2 style="margin:0 0 16px;font-size:17px;font-weight:800;color:#f3f4f6;">📋 ${d.subject_name}</h2>
       <ul style="margin:0;padding-left:0;list-style:none;">
-        ${formatBullets(d.content) || `<li style="color:#9ca3af;">${d.content.slice(0, 300)}</li>`}
+        ${formatContent(d.content)}
       </ul>
     </div>
   `).join('')
@@ -58,7 +62,7 @@ function buildEmailHTML(digests: DigestItem[]): string {
     <!-- Footer -->
     <div style="text-align:center;margin-top:40px;padding-top:24px;border-top:1px solid #1f1b2e;">
       <p style="margin:0;color:#4b5563;font-size:12px;">
-        You're receiving this because you have sources tracked on Stalk.ai.<br>
+        You're receiving this because you have subjects tracked on Stalk.ai.<br>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" style="color:#7c3aed;">View dashboard</a>
       </p>
     </div>
@@ -74,7 +78,7 @@ export async function sendDailyDigest(to: string, digests: DigestItem[]) {
     const { data, error } = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? 'digest@stalkai.com',
         to,
-        subject: `🤖 Your Stalk.ai Daily Digest — ${digests.length} source${digests.length !== 1 ? 's' : ''}`,
+        subject: `🤖 Your Stalk.ai Daily Digest — ${digests.length} subject${digests.length !== 1 ? 's' : ''}`,
         html,
     })
     if (error) throw new Error(`Resend error: ${error.message}`)

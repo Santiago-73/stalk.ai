@@ -4,24 +4,42 @@ import { sendDailyDigest } from '@/lib/email'
 import { XMLParser } from 'fast-xml-parser'
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' })
-
-// Gemini model by plan
-function geminiModel(plan: string | null): string {
-    if (plan === 'pro' || plan === 'ultra') return 'gemini-2.0-flash-001'
-    return 'gemini-2.0-flash-001'
-}
-
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
-async function geminiGenerateWithRetry(prompt: string, model: string, retries = 2): Promise<string> {
-    for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-            return await geminiGenerate(prompt, model)
-        } catch (err) {
-            const msg = String(err)
-            if (msg.includes('429') && attempt < retries) {
-                console.log(`[cron] Rate limited, waiting ${(attempt + 1) * 3}s before retry...`)
-                await sleep((attempt + 1) * 3000)
+// ── Gemini ───────────────────────────────────────────────────────────────────
+
+async function geminiGenerate(prompt: string): Promise<string> {
+    const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID
+        || process.env.GOOGLE_GEMINI_API_KEY
+        || process.env.GOOGLE_GEMINI_API_KEY_FREE
+    if (!apiKey) throw new Error('No Gemini API key configured')
+
+    const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']
+    let lastErr = ''
+    for (const model of models) {
+        const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+                signal: AbortSignal.timeout(45000),
+            }
+        )
+        if (res.status === 404) { lastErr = `${model} not found`; continue }
+        if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text().catch(() => '')).slice(0, 200)}`)
+        const text = (await res.json())?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+        if (text) return text
+    }
+    throw new Error(`No working Gemini model. Last: ${lastErr}`)
+}
+
+async function geminiWithRetry(prompt: string, retries = 2): Promise<string> {
+    for (let i = 0; i <= retries; i++) {
+        try { return await geminiGenerate(prompt) }
+        catch (err) {
+            if (String(err).includes('429') && i < retries) {
+                await sleep((i + 1) * 3000)
                 continue
             }
             throw err
@@ -30,114 +48,140 @@ async function geminiGenerateWithRetry(prompt: string, model: string, retries = 
     throw new Error('Max retries exceeded')
 }
 
-async function geminiGenerate(prompt: string, model: string): Promise<string> {
-    const apiKey = process.env.GOOGLE_GEMINI_API_KEY
-    if (!apiKey) throw new Error('GOOGLE_GEMINI_API_KEY not set')
-    const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-            signal: AbortSignal.timeout(45000),
-        }
-    )
-    if (!res.ok) {
-        const errText = await res.text().catch(() => '')
-        throw new Error(`Gemini ${res.status}: ${errText.slice(0, 300)}`)
-    }
-    const json = await res.json()
-    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-    if (!text) throw new Error('Gemini returned empty text')
-    return text
-}
+// ── Source fetchers (return list of titles) ──────────────────────────────────
 
-// RSS / YouTube helper
-async function fetchRSS(url: string): Promise<string> {
-    const res = await fetch(url, { headers: { 'User-Agent': 'Stalk.ai/1.0' }, signal: AbortSignal.timeout(10000) })
+async function fetchRSSTitles(url: string): Promise<string[]> {
+    const res = await fetch(url, {
+        headers: { 'User-Agent': 'Stalk.ai/1.0', 'Accept': 'application/xml, text/xml, */*' },
+        signal: AbortSignal.timeout(10000),
+    })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const parsed = parser.parse(await res.text())
     const channel = parsed?.rss?.channel ?? parsed?.feed ?? {}
     const rawItems = channel.item ?? channel.entry ?? []
-    const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 8)
-    return items.map((i: { title?: string; description?: string; summary?: string }) =>
-        `• ${i.title ?? ''}: ${String(i.description ?? i.summary ?? '').replace(/<[^>]*>/g, '').slice(0, 300)}`
-    ).join('\n')
+    const items = (Array.isArray(rawItems) ? rawItems : [rawItems]).slice(0, 4)
+    return items.map((i: { title?: unknown }) => String(i.title ?? '').trim()).filter(Boolean)
 }
 
-async function fetchYouTube(url: string): Promise<string> {
-    const m = url.match(/youtube\.com\/channel\/([A-Za-z0-9_-]+)/)
-    if (!m) throw new Error('Bad YouTube URL')
-    return fetchRSS(`https://www.youtube.com/feeds/videos.xml?channel_id=${m[1]}`)
+async function fetchYouTubeTitles(url: string): Promise<string[]> {
+    const channelMatch = url.match(/youtube\.com\/channel\/(UC[A-Za-z0-9_-]+)/)
+    const handleMatch = url.match(/youtube\.com\/@([A-Za-z0-9_-]+)/)
+
+    if (channelMatch) return fetchRSSTitles(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`)
+
+    if (handleMatch) {
+        const page = await fetch(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+            signal: AbortSignal.timeout(12000),
+        })
+        const html = await page.text()
+        const idMatch = html.match(/"channelId":"(UC[A-Za-z0-9_-]+)"/) || html.match(/"externalId":"(UC[A-Za-z0-9_-]+)"/)
+        if (!idMatch) throw new Error('Could not find YouTube channel ID')
+        return fetchRSSTitles(`https://www.youtube.com/feeds/videos.xml?channel_id=${idMatch[1]}`)
+    }
+    throw new Error('Unrecognised YouTube URL')
 }
 
-interface RedditPost {
-    title: string
-    score: number
-    num_comments: number
-    thumbnail: string
-    url: string
-    permalink: string
-    selftext: string
-    preview?: { images?: { source?: { url?: string } }[] }
-}
-
-interface RedditResult {
-    subreddit: string
-    raw: string
-    thumbnails: { title: string; thumb: string; permalink: string; score: number }[]
-}
-
-async function fetchReddit(url: string): Promise<RedditResult> {
+async function fetchRedditTitles(url: string): Promise<string[]> {
     const m = url.match(/reddit\.com\/r\/([A-Za-z0-9_]+)/)
     if (!m) throw new Error('Bad Reddit URL')
-    const subreddit = m[1]
-    const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=15`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Stalkbot/1.0)' },
+    const res = await fetch(`https://www.reddit.com/r/${m[1]}/hot.json?limit=4`, {
+        headers: { 'User-Agent': 'stalk-ai/1.0 by sanespi012' },
         signal: AbortSignal.timeout(10000),
     })
     const text = await res.text()
     if (text.startsWith('<')) throw new Error('Reddit blocked')
-    const posts: { data: RedditPost }[] = JSON.parse(text)?.data?.children ?? []
-
-    const cleanText = (s: string) => s
-        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-        .replace(/https?:\/\/\S+/g, '').replace(/\n+/g, ' ').replace(/\s{2,}/g, ' ').trim()
-
-    const lines: string[] = []
-    const thumbnails: RedditResult['thumbnails'] = []
-
-    for (const { data: p } of posts.slice(0, 10)) {
-        const body = p.selftext ? cleanText(p.selftext).slice(0, 250) : ''
-        const line = `• [${p.score ?? 0} pts, ${p.num_comments ?? 0} comentarios] ${p.title}`
-        lines.push(body ? `${line}\n  Contexto: ${body}` : line)
-
-        // Collect thumbnail - prefer preview image, fallback to thumbnail
-        const previewUrl = p.preview?.images?.[0]?.source?.url
-            ?.replace(/&amp;/g, '&')
-        const thumbUrl = previewUrl
-            || (p.thumbnail && !['self', 'default', 'nsfw', 'spoiler', ''].includes(p.thumbnail)
-                ? p.thumbnail : null)
-
-        if (thumbUrl) {
-            thumbnails.push({
-                title: p.title,
-                thumb: thumbUrl,
-                permalink: `https://reddit.com${p.permalink}`,
-                score: p.score ?? 0,
-            })
-        }
-    }
-
-    return { subreddit, raw: lines.join('\n\n'), thumbnails }
+    const posts: { data: { title: string } }[] = JSON.parse(text)?.data?.children ?? []
+    return posts.slice(0, 4).map(p => p.data.title).filter(Boolean)
 }
+
+async function fetchTikTokTitles(url: string): Promise<string[]> {
+    const m = url.match(/tiktok\.com\/@([A-Za-z0-9_.]+)/)
+    if (!m) throw new Error('Bad TikTok URL')
+    const instances = ['https://rsshub.app', 'https://rsshub.rss.plus', 'https://rss.fatpandac.me']
+    for (const base of instances) {
+        try { return await fetchRSSTitles(`${base}/tiktok/user/@${m[1]}`) } catch { /* try next */ }
+    }
+    throw new Error('All RSSHub instances failed')
+}
+
+async function fetchBlueskyTitles(url: string): Promise<string[]> {
+    const m = url.match(/(?:bsky\.app\/profile\/)?(@?[a-zA-Z0-9._-]+)/)
+    if (!m) throw new Error('Bad Bluesky URL')
+    let handle = m[1].startsWith('@') ? m[1].slice(1) : m[1]
+    const profileRes = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${handle}`, { signal: AbortSignal.timeout(10000) })
+    if (!profileRes.ok) throw new Error('Bluesky handle not found')
+    const did = (await profileRes.json())?.did
+    const feedRes = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}&limit=4`, { signal: AbortSignal.timeout(10000) })
+    const posts = (await feedRes.json())?.feed || []
+    return posts.slice(0, 4).map((item: { post?: { record?: { text?: string } } }) =>
+        item.post?.record?.text?.replace(/\n/g, ' ').slice(0, 200) || ''
+    ).filter(Boolean)
+}
+
+async function fetchHackerNewsTitles(url: string): Promise<string[]> {
+    const listMatch = url.match(/\/(top|new|best|ask|show)/)
+    const type = listMatch ? listMatch[1] : 'top'
+    const res = await fetch(`https://hacker-news.firebaseio.com/v0/${type}stories.json`, { signal: AbortSignal.timeout(8000) })
+    if (!res.ok) throw new Error('HN API failed')
+    const ids: number[] = await res.json()
+    const stories = await Promise.allSettled(
+        ids.slice(0, 4).map(id =>
+            fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, { signal: AbortSignal.timeout(5000) }).then(r => r.json())
+        )
+    )
+    return stories
+        .filter(r => r.status === 'fulfilled')
+        .map(r => (r as PromiseFulfilledResult<{ title?: string }>).value?.title ?? '')
+        .filter(Boolean)
+}
+
+async function fetchSourceTitles(source: { type: string; url: string }): Promise<string[]> {
+    switch (source.type) {
+        case 'youtube': return fetchYouTubeTitles(source.url)
+        case 'reddit': return fetchRedditTitles(source.url)
+        case 'tiktok': return fetchTikTokTitles(source.url)
+        case 'bluesky': return fetchBlueskyTitles(source.url)
+        case 'hackernews': return fetchHackerNewsTitles(source.url)
+        case 'substack': {
+            const atMatch = source.url.match(/substack\.com\/@([A-Za-z0-9_-]+)/)
+            const feedUrl = atMatch
+                ? `https://${atMatch[1]}.substack.com/feed`
+                : source.url.includes('/feed') ? source.url : source.url.replace(/\/?$/, '/feed')
+            return fetchRSSTitles(feedUrl)
+        }
+        case 'github': {
+            const m = source.url.match(/github\.com\/([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)/)
+            if (!m) throw new Error('Bad GitHub URL')
+            try { return await fetchRSSTitles(`https://github.com/${m[1]}/releases.atom`) }
+            catch { return fetchRSSTitles(`https://github.com/${m[1]}/commits.atom`) }
+        }
+        case 'medium': {
+            const m = source.url.match(/medium\.com\/@?([A-Za-z0-9_.-]+)/) || source.url.match(/([A-Za-z0-9_.-]+)\.medium\.com/)
+            if (!m) throw new Error('Bad Medium URL')
+            return fetchRSSTitles(`https://medium.com/feed/@${m[1]}`)
+        }
+        case 'devto': {
+            const m = source.url.match(/dev\.to\/([A-Za-z0-9_-]+)/)
+            if (!m) throw new Error('Bad Dev.to URL')
+            const res = await fetch(`https://dev.to/api/articles?username=${m[1]}&per_page=4`, {
+                headers: { 'User-Agent': 'stalk-ai/1.0' }, signal: AbortSignal.timeout(10000),
+            })
+            const articles = await res.json()
+            return articles.slice(0, 4).map((a: { title?: string }) => a.title || '').filter(Boolean)
+        }
+        default: return fetchRSSTitles(source.url)
+    }
+}
+
+// ── Route ────────────────────────────────────────────────────────────────────
+
+interface Source { id: string; name: string; type: string; url: string }
+interface Subject { id: string; name: string; description: string; sources: Source[] }
 
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization')
-    const bearerToken = authHeader?.replace('Bearer ', '')
-    const querySecret = req.nextUrl.searchParams.get('secret')
-    const secret = bearerToken ?? querySecret
-
+    const secret = authHeader?.replace('Bearer ', '') ?? req.nextUrl.searchParams.get('secret')
     if (secret !== process.env.CRON_SECRET) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -148,12 +192,9 @@ export async function GET(req: NextRequest) {
     )
 
     const { data: profiles } = await supabase.from('profiles').select('id, email, plan')
+    if (!profiles || profiles.length === 0) return NextResponse.json({ message: 'No users' })
 
-    if (!profiles || profiles.length === 0) {
-        return NextResponse.json({ message: 'No users' })
-    }
-
-    const results: { user: string; digests: number; emailed: boolean }[] = []
+    const results: { user: string; subjects: number; emailed: boolean }[] = []
 
     for (const profile of profiles) {
         try {
@@ -161,125 +202,89 @@ export async function GET(req: NextRequest) {
             const email = authUser?.user?.email
             if (!email) continue
 
-            // Enforce Weekly Digest for Free tier (runs only on Sundays)
+            // Free → only Sundays
             if (profile.plan === 'free' && new Date().getDay() !== 0) {
                 console.log(`[cron] Skipping free user ${profile.id} (not Sunday)`)
                 continue
             }
 
-            const { data: sources } = await supabase
-                .from('sources')
-                .select('*')
+            // Fetch subjects with their sources
+            const { data: subjects } = await supabase
+                .from('subjects')
+                .select('*, sources(*)')
                 .eq('user_id', profile.id)
-                .not('subject_id', 'is', null)
 
-            if (!sources || sources.length === 0) continue
+            if (!subjects || subjects.length === 0) continue
 
-            const model = geminiModel(profile.plan)
-            const digestItems: { source_name: string; source_type: string; content: string }[] = []
+            const digestItems: { subject_name: string; content: string }[] = []
 
-            for (const source of sources) {
+            for (const subject of subjects as Subject[]) {
+                if (!subject.sources || subject.sources.length === 0) continue
                 try {
-                    let raw = ''
-                    let prompt: string
-                    let metadata: Record<string, unknown> | null = null
+                    // Fetch titles from all sources in parallel
+                    const settled = await Promise.allSettled(
+                        subject.sources.map(async s => {
+                            const titles = await fetchSourceTitles(s)
+                            return { name: s.name, titles }
+                        })
+                    )
 
-                    if (source.type === 'youtube') {
-                        raw = await fetchYouTube(source.url)
-                        prompt = `You are a concise content summarizer. Summarize these recent YouTube videos from "${source.name}" in 4–5 bullet points (• character). Same language as content. No intro, just bullets.\n\n${raw}`
-
-                    } else if (source.type === 'reddit') {
-                        const result = await fetchReddit(source.url)
-                        raw = result.raw
-                        if (result.thumbnails.length > 0) {
-                            metadata = { thumbnails: result.thumbnails }
+                    const allTitles: string[] = []
+                    const sourceLines: string[] = []
+                    for (const r of settled) {
+                        if (r.status === 'fulfilled' && r.value.titles.length > 0) {
+                            allTitles.push(...r.value.titles)
+                            sourceLines.push(`${r.value.name}:\n${r.value.titles.map(t => `  • ${t}`).join('\n')}`)
                         }
-                        prompt = `You are a Reddit analyst. Write a digest of r/${result.subreddit} in the SAME language as the posts below.
-
-Use this EXACT format (keep the bold headers with emojis):
-
-**🔥 Lo más destacado:** Write 1-2 sentences describing the main trend or topic dominating the subreddit right now.
-
-**📌 Discusiones clave:**
-• Post title here — why it matters, key insight or community reaction (mention score if notable)
-• Post title here — why it matters, key insight or community reaction
-• Post title here — why it matters, key insight or community reaction
-• Post title here — why it matters, key insight or community reaction
-
-**💡 Conclusión:** One sentence summarizing what this tells us about the community or topic today.
-
-Here are the top posts:
-${raw}`
-
-                    } else {
-                        raw = await fetchRSS(source.url)
-                        prompt = `You are a concise content summarizer. Summarize these recent items from "${source.name}" in 4–5 bullet points (• character). Same language as content. No intro, just bullets.\n\n${raw}`
                     }
 
-                    if (!raw) continue
+                    if (allTitles.length === 0) continue
+
+                    const subjectContext = subject.description
+                        ? `${subject.name} (${subject.description})`
+                        : subject.name
+
+                    const prompt = `You are a concise content summarizer. Below are recent posts/videos from the subject "${subjectContext}", grouped by source. Write a digest in the SAME language as the content using this format:
+
+For each source with content, write:
+**[Source Name]:**
+• Title — one sentence description of what it's about
+
+At the end, add:
+**💡 Resumen:** One sentence (max 20 words) summarizing the overall activity.
+
+No intro text, no extra commentary. Just the format above.
+
+${sourceLines.join('\n\n')}`
 
                     let content: string
-
-                    if (model) {
-                        try {
-                            content = await geminiGenerateWithRetry(prompt, model)
-                            console.log(`[cron] ✅ Gemini OK for ${source.name} (${content.length} chars)`)
-                        } catch (geminiErr) {
-                            console.error(`[cron] ❌ Gemini failed for ${source.name}:`, geminiErr)
-                            if (source.type === 'reddit') {
-                                const posts = raw.split('\n\n').slice(0, 4)
-                                content = `**🔥 Lo más destacado:**\nTrending topics and top discussions from r/${source.name} today.\n\n**📌 Discusiones clave:**\n` +
-                                    posts.map(p => {
-                                        const lines = p.split('\n')
-                                        const titleLine = lines[0].replace(/^•\s*/, '')
-                                        const contextLine = lines[1] ? lines[1].replace(/^\s*Contexto:\s*/, '') : 'Popular discussion'
-                                        return `• ${titleLine} — ${contextLine.slice(0, 100)}...`
-                                    }).join('\n') +
-                                    `\n\n**💡 Conclusión:**\nThe community is actively discussing these topics right now.`
-                            } else {
-                                content = raw.split('\n').slice(0, 6).join('\n')
-                            }
-                        }
-                        // Throttle between sources to avoid rate limits
-                        await sleep(2000)
-                    } else {
-                        // Free plan gets no AI, straight to fallback
-                        if (source.type === 'reddit') {
-                            const posts = raw.split('\n\n').slice(0, 4)
-                            content = `**🔥 Lo más destacado:**\nTrending topics and top discussions from r/${source.name} today.\n\n**📌 Discusiones clave:**\n` +
-                                posts.map(p => {
-                                    const lines = p.split('\n')
-                                    const titleLine = lines[0].replace(/^•\s*/, '')
-                                    const contextLine = lines[1] ? lines[1].replace(/^\s*Contexto:\s*/, '') : 'Popular discussion'
-                                    return `• ${titleLine} — ${contextLine.slice(0, 100)}...`
-                                }).join('\n') +
-                                `\n\n**💡 Conclusión:**\nThe community is actively discussing these topics right now.`
-                        } else {
-                            content = raw.split('\n').slice(0, 6).join('\n')
-                        }
+                    try {
+                        content = await geminiWithRetry(prompt)
+                        await sleep(2000) // throttle between subjects
+                    } catch (err) {
+                        console.error(`[cron] Gemini failed for subject ${subject.name}:`, err)
+                        // Fallback: plain list
+                        content = sourceLines.join('\n\n')
                     }
 
-                    // Save to DB (with metadata if available)
-                    const insertData: Record<string, unknown> = {
-                        source_id: source.id,
+                    // Save digest
+                    await supabase.from('digests').insert({
                         user_id: profile.id,
+                        subject_id: subject.id,
+                        source_name: subject.name,
+                        source_type: 'subject',
                         content,
-                        source_name: source.name,
-                        source_type: source.type,
-                    }
-                    if (metadata) insertData.metadata = metadata
+                    })
 
-                    await supabase.from('digests').insert(insertData)
-                    digestItems.push({ source_name: source.name, source_type: source.type, content })
-
+                    digestItems.push({ subject_name: subject.name, content })
                 } catch (e) {
-                    console.error(`[cron] source ${source.id}:`, e)
+                    console.error(`[cron] subject ${subject.id}:`, e)
                 }
             }
 
             if (digestItems.length > 0) {
                 await sendDailyDigest(email, digestItems)
-                results.push({ user: email, digests: digestItems.length, emailed: true })
+                results.push({ user: email, subjects: digestItems.length, emailed: true })
             }
         } catch (e) {
             console.error(`[cron] user ${profile.id}:`, e)
