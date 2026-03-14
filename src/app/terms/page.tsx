@@ -26,7 +26,7 @@ export default function TermsPage() {
                     },
                     {
                         title: '4. Acceptable use',
-                        body: 'You agree not to: use the service to monitor private individuals without their consent, attempt to scrape or reverse-engineer the platform, use automated means to create accounts or generate excessive API requests, or use the service in any way that violates applicable laws.'
+                        body: 'You agree not to: use the service to monitor private individuals not publicly available on social platforms, attempt to scrape or reverse-engineer the platform, use automated means to create accounts or generate excessive API requests, or use the service in any way that violates applicable laws.'
                     },
                     {
                         title: '5. Plans and billing',
