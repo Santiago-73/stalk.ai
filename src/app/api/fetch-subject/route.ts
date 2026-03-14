@@ -133,6 +133,12 @@ async function fetchReddit(url: string): Promise<FetchedItem[]> {
     const res = await fetch(`${apiBase}/r/${subreddit}/new.json?limit=4`, {
         headers, signal: AbortSignal.timeout(10000),
     })
+
+    // Fallback to public RSS when API returns 403 (private/quarantined subreddit)
+    if (res.status === 403) {
+        return fetchRSS(`https://www.reddit.com/r/${subreddit}/new/.rss`)
+    }
+
     if (!res.ok) throw new Error(`Reddit API returned ${res.status} for r/${subreddit}`)
 
     const data = await res.json()
