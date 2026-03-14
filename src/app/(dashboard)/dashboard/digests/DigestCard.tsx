@@ -232,7 +232,7 @@ export default function DigestCard({ digest }: { digest: Digest }) {
     const thumbnails = digest.metadata?.thumbnails ?? []
     const [isExpanded, setIsExpanded] = useState(false)
 
-    const rich = isRichFormat(digest.content)
+    const rich = isRichFormat(digest.content) || (digest.source_type === 'subject' && isAIGenerated(digest.content))
     const aiGen = isAIGenerated(digest.content)
 
     // Preview: prefer the first real bullet, stripped of markdown
