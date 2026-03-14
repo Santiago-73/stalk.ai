@@ -325,15 +325,10 @@ async function fetchSourceContent(source: { type: string; url: string }): Promis
 
 // ── Gemini ───────────────────────────────────────────────────────────────────
 
-async function geminiGenerate(prompt: string, apiKey: string): Promise<string> {
-    // Try models in order until one works — newer keys require newer models
-    const models = [
-        'gemini-2.5-flash',
-        'gemini-2.5-pro',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro',
-        'gemini-2.0-flash',
-    ]
+async function geminiGenerate(prompt: string, apiKey: string, premium = false): Promise<string> {
+    const models = premium
+        ? ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash']
+        : ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']
     let lastError = ''
     for (const model of models) {
         const res = await fetch(
@@ -421,7 +416,9 @@ export async function POST(req: NextRequest) {
             : typedSubject.name
 
         // Get user plan
-        // Use paid key (Nivel 1) with gemini-2.5-flash
+        const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+        const isPremium = profile?.plan === 'pro' || profile?.plan === 'ultra'
+
         const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID
             || process.env.GOOGLE_GEMINI_API_KEY
             || process.env.GOOGLE_GEMINI_API_KEY_FREE
@@ -441,7 +438,7 @@ export async function POST(req: NextRequest) {
         let descriptions: string[] = []
         try {
             if (apiKey) {
-                const raw = await geminiGenerate(descPrompt, apiKey)
+                const raw = await geminiGenerate(descPrompt, apiKey, isPremium)
                 descriptions = raw.split('\n')
                     .filter(l => /^\d+[\.\)]\s/.test(l.trim()))
                     .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
@@ -471,7 +468,7 @@ export async function POST(req: NextRequest) {
         if (allItems.length > 0 && apiKey) {
             try {
                 const takeawayPrompt = `Based on these recent posts from ${subjectContext}: "${allItems.map(t => t.title).join(' | ')}" — write ONE sentence (max 25 words) summarizing the overall recent activity. Write in the same language as the titles.`
-                const takeaway = await geminiGenerate(takeawayPrompt, apiKey)
+                const takeaway = await geminiGenerate(takeawayPrompt, apiKey, isPremium)
                 digest += `**💡 Takeaway:** ${takeaway.trim().replace(/^["']|["']$/g, '')}`
             } catch { /* skip takeaway on error */ }
         }

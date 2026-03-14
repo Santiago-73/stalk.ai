@@ -14,7 +14,7 @@ async function geminiGenerate(prompt: string): Promise<string> {
         || process.env.GOOGLE_GEMINI_API_KEY_FREE
     if (!apiKey) throw new Error('No Gemini API key configured')
 
-    const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash']
+    const models = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash']
     let lastErr = ''
     for (const model of models) {
         const res = await fetch(
