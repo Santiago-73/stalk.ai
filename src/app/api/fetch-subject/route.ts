@@ -467,7 +467,18 @@ export async function POST(req: NextRequest) {
             || process.env.GOOGLE_GEMINI_API_KEY
             || process.env.GOOGLE_GEMINI_API_KEY_FREE
 
-        // Collect all titles (clean, no desc mixed in)
+        // Build formatted digest — bold title + raw desc as fallback
+        let digest = ''
+        for (const { source, items } of fetched) {
+            if (items.length === 0) continue
+            digest += `**${source.name}:**\n`
+            for (const item of items) {
+                digest += `• **${item.title}**${item.desc ? ` — ${item.desc}` : ''}\n`
+            }
+            digest += '\n'
+        }
+
+        // Collect all items for trend analysis
         const allItems: { title: string; sourceName: string }[] = []
         for (const { source, items } of fetched) {
             for (const item of items) {
@@ -475,48 +486,11 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Ask AI ONLY for short descriptions (simple numbered list — works with any model)
-        const titlesList = allItems.map((t, i) => `${i + 1}. ${t.title}`).join('\n')
-        const descPrompt = `For each title below, write ONE SHORT sentence (in the same language as the title) describing what this video/post is about. Output ONLY numbered lines matching the input. No extra text.\n\n${titlesList}`
-
-        let descriptions: string[] = []
-        try {
-            if (apiKey) {
-                const raw = await geminiGenerate(descPrompt, apiKey, isPremium)
-                descriptions = raw.split('\n')
-                    .filter(l => /^\d+[\.\)]\s/.test(l.trim()))
-                    .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
-                    .filter(l => l.length > 0)
-            }
-        } catch (err) {
-            console.error('[fetch-subject] Gemini descriptions error:', err)
-        }
-
-        // Build formatted digest — bold title, AI description (or RSS desc as fallback)
-        let digest = ''
-        let idx = 0
-        for (const { source, items } of fetched) {
-            if (items.length === 0) continue
-            digest += `**${source.name}:**\n`
-            for (const item of items) {
-                const aiDesc = descriptions[idx] || ''
-                const fallbackDesc = item.desc || ''
-                const desc = aiDesc || fallbackDesc
-                digest += `• **${item.title}**${desc ? ` — ${desc}` : ''}\n`
-                idx++
-            }
-            digest += '\n'
-        }
-
-        // Add trend analysis for all tiers
+        // Trend analysis
         if (allItems.length > 0 && apiKey) {
             try {
-                let idx2 = 0
                 const sourceLines = fetched.flatMap(({ source, items }) =>
-                    items.map(item => {
-                        const desc = descriptions[idx2++] || item.desc || ''
-                        return `[${source.name}] ${item.title}${desc ? ` — ${desc}` : ''}`
-                    })
+                    items.map(item => `[${source.name}] ${item.title}${item.desc ? ` — ${item.desc}` : ''}`)
                 ).join('\n')
 
                 const takeawayPrompt = `You are a trend analyst for content creators.
