@@ -171,6 +171,7 @@ export async function GET(req: NextRequest) {
                 .from('sources')
                 .select('*')
                 .eq('user_id', profile.id)
+                .not('subject_id', 'is', null)
 
             if (!sources || sources.length === 0) continue
 
