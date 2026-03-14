@@ -442,7 +442,14 @@ export async function POST(req: NextRequest) {
             .map(r => (r as PromiseFulfilledResult<{ source: Source; items: FetchedItem[] }>).value)
             .filter(f => f.items.length > 0)
 
-        if (fetched.length === 0) return NextResponse.json({ error: 'Could not fetch content from any source' }, { status: 422 })
+        const failed = settled
+            .map((r, i) => ({ r, source: typedSubject.sources[i] }))
+            .filter(({ r }) => r.status === 'rejected')
+            .map(({ r, source }) => ({ name: source.name, type: source.type, error: (r as PromiseRejectedResult).reason?.message ?? String((r as PromiseRejectedResult).reason) }))
+
+        console.error('[fetch-subject] failed sources:', JSON.stringify(failed))
+
+        if (fetched.length === 0) return NextResponse.json({ error: 'Could not fetch content from any source', failed }, { status: 422 })
 
         const subjectContext = typedSubject.description
             ? `${typedSubject.name} (${typedSubject.description})`
@@ -519,7 +526,7 @@ export async function POST(req: NextRequest) {
 
         if (digErr) return NextResponse.json({ error: digErr.message }, { status: 500 })
 
-        return NextResponse.json({ success: true, digest: digestRow, sources_fetched: fetched.length })
+        return NextResponse.json({ success: true, digest: digestRow, sources_fetched: fetched.length, sources_failed: failed })
     } catch (err: unknown) {
         console.error('[fetch-subject]', err)
         return NextResponse.json({ error: err instanceof Error ? err.message : 'Unknown error' }, { status: 500 })
