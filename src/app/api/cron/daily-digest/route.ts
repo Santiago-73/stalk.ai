@@ -202,9 +202,9 @@ export async function GET(req: NextRequest) {
             const email = authUser?.user?.email
             if (!email) continue
 
-            // Free → only Sundays
-            if (profile.plan === 'free' && new Date().getDay() !== 0) {
-                console.log(`[cron] Skipping free user ${profile.id} (not Sunday)`)
+            // Only Pro and Ultra get daily emails
+            if (profile.plan === 'free') {
+                console.log(`[cron] Skipping free user ${profile.id}`)
                 continue
             }
 
@@ -216,7 +216,7 @@ export async function GET(req: NextRequest) {
 
             if (!subjects || subjects.length === 0) continue
 
-            const digestItems: { subject_name: string; content: string }[] = []
+            let emailsSent = 0
 
             for (const subject of subjects as Subject[]) {
                 if (!subject.sources || subject.sources.length === 0) continue
@@ -263,7 +263,6 @@ ${sourceLines.join('\n\n')}`
                         await sleep(2000) // throttle between subjects
                     } catch (err) {
                         console.error(`[cron] Gemini failed for subject ${subject.name}:`, err)
-                        // Fallback: plain list
                         content = sourceLines.join('\n\n')
                     }
 
@@ -276,15 +275,17 @@ ${sourceLines.join('\n\n')}`
                         content,
                     })
 
-                    digestItems.push({ subject_name: subject.name, content })
+                    // Send one email per subject
+                    await sendDailyDigest(email, [{ subject_name: subject.name, content }])
+                    emailsSent++
+                    await sleep(1000) // throttle between emails
                 } catch (e) {
                     console.error(`[cron] subject ${subject.id}:`, e)
                 }
             }
 
-            if (digestItems.length > 0) {
-                await sendDailyDigest(email, digestItems)
-                results.push({ user: email, subjects: digestItems.length, emailed: true })
+            if (emailsSent > 0) {
+                results.push({ user: email, subjects: emailsSent, emailed: true })
             }
         } catch (e) {
             console.error(`[cron] user ${profile.id}:`, e)

@@ -78,7 +78,7 @@ export async function sendDailyDigest(to: string, digests: DigestItem[]) {
     const { data, error } = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL ?? 'digest@stalkai.com',
         to,
-        subject: `🤖 Your Stalk.ai Daily Digest — ${digests.length} subject${digests.length !== 1 ? 's' : ''}`,
+        subject: `🤖 ${digests[0]?.subject_name ?? 'Daily Digest'} — Stalk.ai`,
         html,
     })
     if (error) throw new Error(`Resend error: ${error.message}`)
