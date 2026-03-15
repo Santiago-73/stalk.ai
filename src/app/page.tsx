@@ -338,7 +338,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Pricing ──────────────────────────────────────────────────────── */}
-      <section id="pricing" className="lp-section" style={{ padding: '120px 40px', borderTop: '1px solid var(--border)' }}>
+      <section id="pricing" className="lp-section" style={{ padding: '120px 40px', borderTop: '1px solid var(--border)', scrollMarginTop: '90px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 72 }}>
             <p className="mono" style={{ color: 'var(--text-muted)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 16 }}>
