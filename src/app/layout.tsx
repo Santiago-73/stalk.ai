@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Stalk.ai – Monitor Everything, Miss Nothing",
+  title: "Stalk.ai – Stalk your niche",
   description: "Track YouTube channels, Reddit threads, blogs and more. Get AI-powered daily digests so you never miss what matters.",
   openGraph: {
-    title: "Stalk.ai – Monitor Everything, Miss Nothing",
+    title: "Stalk.ai – Stalk your niche",
     description: "Track YouTube channels, Reddit threads, blogs and more. Get AI-powered daily digests so you never miss what matters.",
     url: "https://stalk-ai.com",
     siteName: "Stalk.ai",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Stalk.ai – Monitor Everything, Miss Nothing",
+    title: "Stalk.ai – Stalk your niche",
     description: "Track YouTube channels, Reddit threads, blogs and more. Get AI-powered daily digests so you never miss what matters.",
   },
 };
