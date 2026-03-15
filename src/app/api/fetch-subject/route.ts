@@ -467,34 +467,16 @@ export async function POST(req: NextRequest) {
             || process.env.GOOGLE_GEMINI_API_KEY
             || process.env.GOOGLE_GEMINI_API_KEY_FREE
 
-        // Build formatted digest — bold title + raw desc as fallback
-        let digest = ''
-        for (const { source, items } of fetched) {
-            if (items.length === 0) continue
-            digest += `**${source.name}:**\n`
-            for (const item of items) {
-                digest += `• **${item.title}**${item.desc ? ` — ${item.desc}` : ''}\n`
-            }
-            digest += '\n'
-        }
+        // Trend Analysis — the entire digest is the AI analysis, no raw listing
+        const sourceLines = fetched.flatMap(({ source, items }) =>
+            items.map(item => `[${source.name}] ${item.title}${item.desc ? ` — ${item.desc}` : ''}`)
+        ).join('\n')
 
-        // Collect all items for trend analysis
-        const allItems: { title: string; sourceName: string }[] = []
-        for (const { source, items } of fetched) {
-            for (const item of items) {
-                if (item.title) allItems.push({ title: item.title, sourceName: source.name })
-            }
-        }
+        let digest = sourceLines // fallback if Gemini fails
 
-        // Trend analysis
-        if (allItems.length > 0 && apiKey) {
+        if (apiKey) {
             try {
-                const sourceLines = fetched.flatMap(({ source, items }) =>
-                    items.map(item => `[${source.name}] ${item.title}${item.desc ? ` — ${item.desc}` : ''}`)
-                ).join('\n')
-
-                const takeawayPrompt = `You are a trend analyst for content creators.
-
+                const trendPrompt = `You are a trend analyst for content creators.
 Below are the most recent posts/videos from multiple sources about ${subjectContext}. Analyze them together and provide:
 
 1. **Main trend this week** (1-2 sentences): What topic or format is gaining traction across these sources right now?
@@ -508,9 +490,8 @@ Write in the same language as the content. Be specific, not generic. If there is
 Sources:
 ${sourceLines}`
 
-                const takeaway = await geminiGenerate(takeawayPrompt, apiKey, isPremium)
-                digest += `**💡 Trend Analysis:**\n${takeaway.trim()}`
-            } catch { /* skip takeaway on error */ }
+                digest = await geminiGenerate(trendPrompt, apiKey, isPremium)
+            } catch { /* keep raw fallback */ }
         }
 
         // Save digest

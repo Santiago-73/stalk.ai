@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   Eye, Zap, Bell, TrendingUp, Youtube, MessageSquare, Rss,
-  Check, ArrowRight, Radio, Music, Github, BookOpen, Twitter, Instagram, Clock, Sparkles, BookMarked, Tv, FileText
+  Check, ArrowRight, Radio, BookOpen, Sparkles, Tv
 } from 'lucide-react'
 import PricingLink from './_components/PricingLink'
 
@@ -72,21 +72,21 @@ export default function HomePage() {
             fontSize: 'clamp(44px, 7.5vw, 82px)', fontWeight: 800, lineHeight: 1.05,
             marginBottom: 8, letterSpacing: '-3px', color: 'var(--text-primary)'
           }}>
-            Monitor Everything.
+            Stalk your niche.
           </h1>
           <h1 className="serif-italic gradient-text" style={{
             fontSize: 'clamp(46px, 8vw, 88px)', fontWeight: 400, lineHeight: 1.05,
             marginBottom: 32, letterSpacing: '-2px', display: 'block'
           }}>
-            Miss Nothing.
+            Own the trend.
           </h1>
 
           <p style={{
-            fontSize: 19, color: 'var(--text-secondary)', maxWidth: 560,
+            fontSize: 19, color: 'var(--text-secondary)', maxWidth: 580,
             margin: '0 auto 52px', lineHeight: 1.75, fontWeight: 400
           }}>
-            Create subjects from your favorite sources — YouTube, Bluesky, RSS, Substack and more.
-            Stalk.ai generates AI summaries so you never miss what matters.
+            Stalkai analyzes YouTube, Twitch and Reddit to detect what&apos;s trending in your niche.
+            One digest every morning. Always one step ahead.
           </p>
 
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -204,11 +204,11 @@ export default function HomePage() {
               How it works
             </p>
             <h2 style={{ fontSize: 'clamp(32px, 4vw, 48px)', fontWeight: 800, marginBottom: 16, letterSpacing: '-1.5px' }}>
-              Your internet,{' '}
-              <span className="serif-italic gradient-text" style={{ fontWeight: 400 }}>curated by AI</span>
+              From sources to{' '}
+              <span className="serif-italic gradient-text" style={{ fontWeight: 400 }}>actionable trends</span>
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: 18, maxWidth: 500, margin: '0 auto' }}>
-              Everything you care about, in one smart feed.
+              Stop scrolling. Start creating with intent.
             </p>
           </div>
 
@@ -216,24 +216,24 @@ export default function HomePage() {
             {[
               {
                 icon: <Zap size={24} />,
-                title: 'Smart subjects',
-                desc: 'Group multiple sources under one topic. Generate a unified digest of everything that matters.',
+                title: 'Follow your niche',
+                desc: 'Add the YouTube channels, subreddits and Twitch streams that dominate your niche. You decide what sources matter.',
                 color: '#f59e0b',
-                mono: '01 / COLLECT'
+                mono: '01 / FOLLOW YOUR NICHE'
               },
               {
                 icon: <Sparkles size={24} />,
-                title: 'AI-powered summaries',
-                desc: 'No more walls of text. AI extracts the key points with context, links and conclusions.',
+                title: 'AI detects patterns',
+                desc: 'Stalkai analyzes all the content together and detects which topics, formats and angles are gaining traction this week.',
                 color: '#7B61FF',
-                mono: '02 / DISTILL'
+                mono: '02 / AI DETECTS PATTERNS'
               },
               {
                 icon: <Bell size={24} />,
-                title: 'Always up to date',
-                desc: 'Generate digests whenever you want. Zero noise, maximum signal — only what truly matters.',
+                title: 'You get there first',
+                desc: 'Receive a digest every morning with the detected trends and what you can do with them before your competition does.',
                 color: '#10b981',
-                mono: '03 / DELIVER'
+                mono: '03 / YOU GET THERE FIRST'
               },
             ].map((f, i) => (
               <div key={i} className="card" style={{ padding: 36, position: 'relative', overflow: 'hidden' }}>
@@ -248,7 +248,6 @@ export default function HomePage() {
                 </div>
                 <h3 style={{ fontSize: 19, fontWeight: 700, marginBottom: 14, letterSpacing: '-0.5px' }}>{f.title}</h3>
                 <p style={{ color: 'var(--text-secondary)', lineHeight: 1.75, fontSize: 15 }}>{f.desc}</p>
-                {/* Accent glow corner */}
                 <div style={{
                   position: 'absolute', bottom: -40, right: -40,
                   width: 120, height: 120, borderRadius: '50%',
@@ -291,43 +290,18 @@ export default function HomePage() {
             {/* Pro */}
             <div style={{ marginBottom: 24 }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14, textAlign: 'center' }}>
-                ⚡ Pro plan
+                ⚡ Pro & Ultra
               </p>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
                 {[
                   { icon: <MessageSquare size={18} />, name: 'Reddit', color: '#ff6314' },
-                  { icon: <Music size={18} />, name: 'TikTok', color: '#ff0050' },
                   { icon: <BookOpen size={18} />, name: 'Substack', color: '#ff6719' },
-                  { icon: <Github size={18} />, name: 'GitHub', color: '#e2e8f0' },
-                  { icon: <BookMarked size={18} />, name: 'Medium', color: '#00ab6c' },
                   { icon: <Tv size={18} />, name: 'Twitch', color: '#9146ff' },
-                  { icon: <FileText size={18} />, name: 'Dev.to', color: '#e2e8f0' },
                 ].map((s, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
                     background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 100,
                     color: s.color, fontWeight: 600, fontSize: 14
-                  }}>
-                    {s.icon} {s.name}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Coming soon */}
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                <Clock size={11} /> Coming soon
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-                {[
-                  { icon: <Twitter size={18} />, name: 'Twitter / X', color: '#1da9f0' },
-                  { icon: <Instagram size={18} />, name: 'Instagram', color: '#e1306c' },
-                ].map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
-                    background: 'var(--bg-card)', border: '1px dashed var(--border)', borderRadius: 100,
-                    color: 'var(--text-muted)', fontWeight: 600, fontSize: 14, opacity: 0.5
                   }}>
                     {s.icon} {s.name}
                   </div>
@@ -371,13 +345,13 @@ export default function HomePage() {
               {
                 name: 'Pro',
                 price: '9',
-                desc: 'For users who need more',
+                desc: 'For creators who need an edge',
                 features: [
                   'Up to 50 subjects',
-                  'Reddit, TikTok, Substack & GitHub',
-                  'Advanced AI digests (Gemini 2.5)',
-                  'Rich format with links and context',
-                  'Early access to new platforms',
+                  'All platforms (Reddit, Twitch, Substack…)',
+                  'Advanced trend analysis (Gemini 2.5)',
+                  'Daily digest by email every morning',
+                  'Unlimited manual generations',
                 ],
                 cta: 'Get Pro',
                 href: '/api/stripe/checkout?plan=pro',
@@ -386,12 +360,11 @@ export default function HomePage() {
               {
                 name: 'Ultra',
                 price: '19',
-                desc: 'No limits',
+                desc: 'For serious creators',
                 features: [
                   'Unlimited subjects',
                   'All platforms',
-                  'Most powerful AI',
-                  'API access (coming soon)',
+                  'Deep Video Analysis — Gemini 2.5 analyzes the full YouTube video: hook, structure, why it worked, what you can replicate',
                   'Priority support',
                 ],
                 cta: 'Get Ultra',

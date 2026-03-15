@@ -242,17 +242,18 @@ export async function GET(req: NextRequest) {
                         ? `${subject.name} (${subject.description})`
                         : subject.name
 
-                    const prompt = `You are a concise content summarizer. Below are recent posts/videos from the subject "${subjectContext}", grouped by source. Write a digest in the SAME language as the content using this format:
+                    const prompt = `You are a trend analyst for content creators.
+Below are the most recent posts/videos from multiple sources about ${subjectContext}. Analyze them together and provide:
 
-For each source with content, write:
-**[Source Name]:**
-• Title — one sentence description of what it's about
+1. **Main trend this week** (1-2 sentences): What topic or format is gaining traction across these sources right now?
 
-At the end, add:
-**💡 Resumen:** One sentence (max 20 words) summarizing the overall activity.
+2. **What creators should know** (1-2 sentences): What is the audience engaging with? What angle is working?
 
-No intro text, no extra commentary. Just the format above.
+3. **Actionable insight** (1 sentence): One specific thing a creator in this niche could do with this information.
 
+Write in the same language as the content. Be specific, not generic. If there is not enough data, say so honestly.
+
+Sources:
 ${sourceLines.join('\n\n')}`
 
                     let content: string
