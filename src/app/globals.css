@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=Fira+Code:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -34,8 +34,19 @@ body {
   overflow-x: hidden;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Sora', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* ── Global noise overlay ───────────────────────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9998;
 }
 
 ::selection {
@@ -77,47 +88,112 @@ body {
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: all 0.2s ease;
+  border-radius: 1.5rem;
+  transition: all 0.25s ease;
 }
 
 .card:hover {
   border-color: var(--border-bright);
   background: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+
+/* ── Serif drama typography ─────────────────────────────────────────────────── */
+.serif-italic {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+}
+
+.mono {
+  font-family: 'Fira Code', monospace;
+}
+
+/* ── Pill nav ───────────────────────────────────────────────────────────────── */
+.lp-nav-pill {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: rgba(10, 10, 20, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(123, 97, 255, 0.18);
+  border-radius: 100px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: min(760px, calc(100vw - 40px));
+}
+
+/* ── Pulsing status dot ─────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 .btn-primary {
+  position: relative;
+  overflow: hidden;
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 100px;
   padding: 10px 20px;
+  font-family: 'Sora', sans-serif;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   text-decoration: none;
+  z-index: 1;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-bright);
+  transform: translateX(-101%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
 }
 
 .btn-primary:hover {
-  background: var(--accent-bright);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 25px var(--accent-glow);
+  transform: scale(1.03);
+  box-shadow: 0 8px 30px var(--accent-glow);
+}
+
+.btn-primary:hover::after {
+  transform: translateX(0);
 }
 
 .btn-secondary {
+  position: relative;
+  overflow: hidden;
   background: transparent;
   color: var(--text-primary);
   border: 1px solid var(--border-bright);
-  border-radius: 8px;
+  border-radius: 100px;
   padding: 10px 20px;
+  font-family: 'Sora', sans-serif;
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, color 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -125,6 +201,7 @@ body {
 }
 
 .btn-secondary:hover {
+  transform: scale(1.03);
   border-color: var(--accent);
   color: var(--accent-bright);
 }
@@ -237,6 +314,11 @@ body {
   }
 
   /* Landing page */
+  .lp-nav-pill {
+    top: 10px !important;
+    padding: 8px 14px !important;
+    gap: 12px !important;
+  }
   .lp-nav {
     padding: 14px 20px !important;
   }
