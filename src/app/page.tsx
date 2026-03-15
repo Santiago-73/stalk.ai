@@ -3,6 +3,7 @@ import {
   Eye, Zap, Bell, TrendingUp, Youtube, MessageSquare, Rss,
   Check, ArrowRight, Radio, Music, Github, BookOpen, Twitter, Instagram, Clock, Sparkles, BookMarked, Tv, FileText
 } from 'lucide-react'
+import PricingLink from './_components/PricingLink'
 
 export default function HomePage() {
   return (
@@ -26,7 +27,7 @@ export default function HomePage() {
         <div style={{ flex: 1 }} />
 
         <div className="lp-nav-links" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <Link href="#pricing" className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13 }}>Pricing</Link>
+          <PricingLink className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13 }}>Pricing</PricingLink>
           <Link href="/login" className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13 }}>Log in</Link>
           <Link href="/signup" className="btn-primary" style={{ padding: '7px 18px', fontSize: 13 }}>
             Start free <ArrowRight size={13} />
@@ -92,9 +93,9 @@ export default function HomePage() {
             <Link href="/signup" className="btn-primary animate-pulse-glow" style={{ fontSize: 16, padding: '15px 32px' }}>
               Get started free <ArrowRight size={16} />
             </Link>
-            <Link href="#pricing" className="btn-secondary" style={{ fontSize: 16, padding: '15px 28px' }}>
+            <PricingLink className="btn-secondary" style={{ fontSize: 16, padding: '15px 28px' }}>
               See pricing
-            </Link>
+            </PricingLink>
           </div>
 
           <p className="mono" style={{ marginTop: 22, color: 'var(--text-muted)', fontSize: 12, letterSpacing: '0.04em' }}>
