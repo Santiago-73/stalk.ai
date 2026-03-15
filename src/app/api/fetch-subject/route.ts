@@ -490,7 +490,9 @@ Write in the same language as the content. Be specific, not generic. If there is
 Sources:
 ${sourceLines}`
 
-                digest = await geminiGenerate(trendPrompt, apiKey, isPremium)
+                const raw = await geminiGenerate(trendPrompt, apiKey, isPremium)
+                // Strip any intro line Gemini adds before the actual analysis
+                digest = raw.replace(/^[^\n*1].*\n+/, '').trim()
             } catch { /* keep raw fallback */ }
         }
 

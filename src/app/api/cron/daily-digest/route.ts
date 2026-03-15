@@ -258,7 +258,9 @@ ${sourceLines.join('\n\n')}`
 
                     let content: string
                     try {
-                        content = await geminiWithRetry(prompt)
+                        const raw = await geminiWithRetry(prompt)
+                        // Strip any intro line Gemini adds before the actual analysis
+                        content = raw.replace(/^[^\n*1].*\n+/, '').trim()
                         await sleep(2000) // throttle between subjects
                     } catch (err) {
                         console.error(`[cron] Gemini failed for subject ${subject.name}:`, err)
