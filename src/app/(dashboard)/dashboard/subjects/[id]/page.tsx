@@ -87,23 +87,32 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
 
     useEffect(() => { fetchData() }, [fetchData])
 
+    const maxSourcesPerSubject = plan === 'ultra' ? Infinity : plan === 'pro' ? 15 : 3
+    const sourceLimitReached = sources.length >= maxSourcesPerSubject
+
     async function addSource() {
-        if (!srcName.trim() || !srcUrl.trim()) return
+        if (!srcName.trim() || !srcUrl.trim() || sourceLimitReached) return
         setSaving(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
-        const { data, error } = await supabase
-            .from('sources')
-            .insert({ name: srcName.trim(), type: selectedType, url: srcUrl.trim(), user_id: user.id, subject_id: id })
-            .select()
-            .single()
-        if (!error && data) {
-            setSources(prev => [...prev, data as Source])
+        try {
+            const res = await fetch('/api/add-source', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: srcName.trim(), type: selectedType, url: srcUrl.trim(), subject_id: id }),
+            })
+            const json = await res.json()
+            if (!res.ok) {
+                setToastError(json.error ?? 'Failed to add source')
+                setTimeout(() => setToastError(null), 5000)
+                if (json.limit_reached) setShowModal(false)
+                return
+            }
+            setSources(prev => [...prev, json.source as Source])
             setSrcName('')
             setSrcUrl('')
             setShowModal(false)
+        } finally {
+            setSaving(false)
         }
-        setSaving(false)
     }
 
     async function removeSource(sourceId: string) {
@@ -220,16 +229,36 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
             <div className="subject-layout-grid" style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 28, alignItems: 'start' }}>
                 {/* Sources panel */}
                 <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <h2 style={{ fontSize: 16, fontWeight: 700 }}>Sources ({sources.length})</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sourceLimitReached ? 8 : 16 }}>
+                        <h2 style={{ fontSize: 16, fontWeight: 700 }}>
+                            Sources ({sources.length}/{plan === 'ultra' ? '∞' : maxSourcesPerSubject})
+                        </h2>
                         <button
                             className="btn-secondary"
-                            onClick={() => setShowModal(true)}
-                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            onClick={() => !sourceLimitReached && setShowModal(true)}
+                            disabled={sourceLimitReached}
+                            style={{ padding: '6px 12px', fontSize: 12, opacity: sourceLimitReached ? 0.4 : 1, cursor: sourceLimitReached ? 'not-allowed' : 'pointer' }}
                         >
                             <Plus size={13} /> Add
                         </button>
                     </div>
+                    {sourceLimitReached && (
+                        <div style={{
+                            marginBottom: 16, padding: '10px 14px', borderRadius: 10,
+                            background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.25)',
+                            fontSize: 12, lineHeight: 1.5
+                        }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>
+                                {plan === 'free'
+                                    ? 'Free plan limit reached (3 sources per subject).'
+                                    : `Pro plan limit reached (15 sources per subject).`}
+                            </span>
+                            {' '}
+                            <a href="/#pricing" style={{ color: 'var(--accent-bright)', fontWeight: 600, textDecoration: 'none' }}>
+                                {plan === 'free' ? 'Upgrade to Pro →' : 'Upgrade to Ultra →'}
+                            </a>
+                        </div>
+                    )}
 
                     {sources.length === 0 ? (
                         <div style={{

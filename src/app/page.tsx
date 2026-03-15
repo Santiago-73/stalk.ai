@@ -333,6 +333,7 @@ export default function HomePage() {
                 price: '0',
                 desc: 'Perfect to get started',
                 features: [
+                  'Up to 3 sources per subject',
                   'Up to 3 subjects',
                   'YouTube, Bluesky, HN & RSS',
                   'AI digest',
@@ -347,6 +348,7 @@ export default function HomePage() {
                 price: '9',
                 desc: 'For creators who need an edge',
                 features: [
+                  'Up to 15 sources per subject',
                   'Up to 50 subjects',
                   'All platforms (Reddit, Twitch, Substack…)',
                   'Advanced trend analysis (Gemini 2.5)',
@@ -362,6 +364,7 @@ export default function HomePage() {
                 price: '19',
                 desc: 'For serious creators',
                 features: [
+                  'Unlimited sources per subject',
                   'Unlimited subjects',
                   'All platforms',
                   'Deep Video Analysis — Gemini 2.5 analyzes the full YouTube video: hook, structure, why it worked, what you can replicate',
