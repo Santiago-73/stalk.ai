@@ -64,7 +64,7 @@ export default function HomePage() {
             fontSize: 12, color: '#a78bfa', fontWeight: 600, letterSpacing: '0.06em',
             textTransform: 'uppercase'
           }}>
-            <Radio size={11} /> AI-powered content monitoring
+            <Radio size={11} /> AI trend analysis for creators
           </div>
 
           {/* Headline — contraste bold sans + serif italic */}
