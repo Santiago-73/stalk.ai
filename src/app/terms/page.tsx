@@ -18,7 +18,7 @@ export default function TermsPage() {
                     },
                     {
                         title: '2. Description of the service',
-                        body: 'Stalk.ai provides an AI-powered content monitoring service that aggregates publicly available content from social media platforms and RSS feeds and generates AI summaries. The service is provided "as is" and feature availability may vary by plan.'
+                        body: 'Stalkai is an AI-powered trend detection tool for content creators. Users create "Subjects" (e.g. a niche or topic) and add sources such as YouTube channels, subreddits, Twitch channels, RSS feeds, Hacker News, Bluesky and Substack. Stalkai analyzes all sources together using Google Gemini to detect emerging trends and delivers a digest with actionable insights. The service is provided "as is" and feature availability varies by plan.'
                     },
                     {
                         title: '3. User accounts',
@@ -30,7 +30,7 @@ export default function TermsPage() {
                     },
                     {
                         title: '5. Plans and billing',
-                        body: 'Paid plans are billed monthly. You may cancel at any time; cancellation takes effect at the end of the current billing period. We do not offer refunds for partial months. We reserve the right to change pricing with 30 days notice.'
+                        body: 'Stalkai offers three plans: Free (3 subjects, 3 sources per subject, manual digest once per day, YouTube + RSS + HN + Bluesky), Pro at $9/month (50 subjects, 15 sources per subject, all platforms, automatic daily digest by email), and Ultra at $19/month (unlimited subjects and sources, all platforms, Deep Video Analysis powered by Gemini 2.5, priority support). Paid plans are billed monthly. You may cancel at any time; cancellation takes effect at the end of the current billing period. We do not offer refunds for partial months. We reserve the right to change pricing with 30 days notice.'
                     },
                     {
                         title: '6. Content and AI-generated summaries',

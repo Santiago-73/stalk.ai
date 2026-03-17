@@ -14,7 +14,7 @@ export default function PrivacyPage() {
                 {[
                     {
                         title: '1. Who we are',
-                        body: 'Stalk.ai is operated by Santiago Espinosa García, based in Spain. We provide an AI-powered content monitoring service that aggregates public content from social media and RSS feeds and generates AI summaries for our users.'
+                        body: 'Stalkai (stalk-ai.com) is operated by Santiago Espinosa García, based in Spain. We provide an AI-powered trend detection tool for content creators that aggregates public content from YouTube, Reddit, Twitch, RSS feeds, Hacker News, Bluesky and Substack, and uses Google Gemini to generate trend analysis digests.'
                     },
                     {
                         title: '2. What data we collect',
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
                     },
                     {
                         title: '5. Third-party services',
-                        body: 'We use the following third-party services: Supabase (database and authentication, EU region), Resend (transactional email), Stripe (payments), Vercel (hosting), Google Gemini (AI generation). Each of these services has its own privacy policy.'
+                        body: 'We use the following third-party services: Supabase (database and authentication, EU region), Resend (transactional email), Stripe (payments), Vercel (hosting), Google Gemini API (AI trend analysis), YouTube Data API (Google), Reddit API, Twitch API. When you add a source, Stalkai fetches only publicly available content from that platform. Each of these services has its own privacy policy.'
                     },
                     {
                         title: '6. Your rights (GDPR)',
