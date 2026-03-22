@@ -35,7 +35,7 @@ const STEPS = [
         emoji: '📁',
         title: 'Create a Subject',
         subtitle: 'Step 1 of 3',
-        content: 'A Subject is the niche topic you want to track — for example "Minecraft en español", "Gaming de terror" or "AI Tools". It groups all your sources together.',
+        content: 'A Subject is the niche topic you want to track — for example "Minecraft speedruns", "Horror gaming" or "AI Tools for creators". It groups all your sources together.',
         visual: (
             <div style={{
                 padding: '16px 20px', borderRadius: 14,
@@ -44,7 +44,7 @@ const STEPS = [
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>
                     Example subjects
                 </div>
-                {['Minecraft en español', 'Gaming de terror', 'AI Tools para creadores', 'Fitness & Nutrition'].map((s, i) => (
+                {['Minecraft speedruns', 'Horror gaming', 'AI Tools for creators', 'Fitness & Nutrition'].map((s, i) => (
                     <div key={i} style={{
                         display: 'flex', alignItems: 'center', gap: 10,
                         padding: '8px 0',
@@ -94,7 +94,7 @@ const STEPS = [
         emoji: '✨',
         title: 'Generate your Digest',
         subtitle: 'Step 3 of 3',
-        content: 'Hit "Generate digest" and Gemini AI reads all your sources at once, detects patterns, and tells you exactly what\'s trending in your niche right now.',
+        content: 'Hit "Generate digest" and our AI reads all your sources at once, detects patterns, and tells you exactly what\'s trending in your niche right now.',
         visual: (
             <div style={{
                 padding: '16px 20px', borderRadius: 14,
@@ -102,7 +102,7 @@ const STEPS = [
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     <Sparkles size={13} color="#a78bfa" />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: 0.8 }}>AI Digest — Minecraft en español</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: 0.8 }}>AI Digest — Minecraft speedruns</span>
                 </div>
                 {[
                     { emoji: '🔥', text: 'Survival hardcore is dominating this week — 3 channels posted series simultaneously' },
