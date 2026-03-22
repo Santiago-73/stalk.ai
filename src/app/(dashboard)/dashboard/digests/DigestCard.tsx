@@ -1,6 +1,6 @@
 'use client'
 
-import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, Clock, Twitter, ChevronDown, Zap } from 'lucide-react'
+import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, Clock, Twitter, ChevronDown, Zap, Lightbulb } from 'lucide-react'
 import { useState } from 'react'
 
 interface Thumbnail {
@@ -26,6 +26,7 @@ function SourceIcon({ type }: { type: string }) {
     if (type === 'twitter') return <Twitter size={16} />
     if (type === 'bluesky') return <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.5px' }}>Bs</span>
     if (type === 'hackernews') return <span style={{ fontWeight: 800, fontSize: 13, background: '#ff6600', color: '#fff', padding: '0 2px' }}>Y</span>
+    if (type === 'offer_blueprint') return <Lightbulb size={16} />
     return <Rss size={16} />
 }
 
@@ -36,6 +37,7 @@ function sourceColor(type: string) {
     if (type === 'hackernews') return { bg: 'rgba(255,102,0,0.2)', color: '#ff6600', border: 'rgba(255,102,0,0.4)', gradient: 'linear-gradient(135deg, #ff6600, #ff8533)' }
     if (type === 'reddit') return { bg: 'rgba(255,145,0,0.2)', color: '#ff9100', border: 'rgba(255,145,0,0.4)', gradient: 'linear-gradient(135deg, #ff7e22, #ff9100)' }
     if (type === 'subject') return { bg: 'rgba(124,58,237,0.2)', color: '#a78bfa', border: 'rgba(124,58,237,0.4)', gradient: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }
+    if (type === 'offer_blueprint') return { bg: 'rgba(16,185,129,0.2)', color: '#10b981', border: 'rgba(16,185,129,0.4)', gradient: 'linear-gradient(135deg, #10b981, #34d399)' }
     if (type === 'substack') return { bg: 'rgba(255,103,25,0.2)', color: '#ff6719', border: 'rgba(255,103,25,0.4)', gradient: 'linear-gradient(135deg, #ff6719, #ff8c4b)' }
     if (type === 'github') return { bg: 'rgba(226,232,240,0.15)', color: '#e2e8f0', border: 'rgba(226,232,240,0.3)', gradient: 'linear-gradient(135deg, #94a3b8, #e2e8f0)' }
     return { bg: 'rgba(102,117,255,0.2)', color: '#6675ff', border: 'rgba(102,117,255,0.4)', gradient: 'linear-gradient(135deg, #6675ff, #7c97ff)' }

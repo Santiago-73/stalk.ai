@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Eye, LayoutDashboard, FileText, Settings, LogOut, Building2 } from 'lucide-react'
+import { Eye, LayoutDashboard, FileText, Settings, LogOut, Building2, Lightbulb } from 'lucide-react'
 import { logout } from '@/app/(auth)/actions'
 
 const navItems = [
     { href: '/dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
     { href: '/dashboard/subjects', icon: <Building2 size={18} />, label: 'Subjects' },
     { href: '/dashboard/digests', icon: <FileText size={18} />, label: 'Digests' },
+    { href: '/dashboard/offer-builder', icon: <Lightbulb size={18} />, label: 'Offer Builder' },
     { href: '/settings', icon: <Settings size={18} />, label: 'Settings' },
 ]
 
