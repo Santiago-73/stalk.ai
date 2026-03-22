@@ -29,8 +29,8 @@ export default function AppleIcon() {
             d="M10 32 C18 18, 46 18, 54 32 C46 46, 18 46, 10 32 Z"
             fill="none"
             stroke="white"
-            stroke-width="3.5"
-            stroke-linejoin="round"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
           />
           <circle cx="32" cy="32" r="8" fill="white" />
           <circle cx="32" cy="32" r="4.5" fill="#6d28d9" />
