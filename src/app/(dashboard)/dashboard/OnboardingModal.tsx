@@ -94,7 +94,7 @@ const STEPS = [
         emoji: '✨',
         title: 'Generate your Digest',
         subtitle: 'Step 3 of 3',
-        content: "Hit "Generate digest" and Gemini AI reads all your sources at once, detects patterns, and tells you exactly what's trending in your niche right now.",
+        content: 'Hit "Generate digest" and Gemini AI reads all your sources at once, detects patterns, and tells you exactly what\'s trending in your niche right now.',
         visual: (
             <div style={{
                 padding: '16px 20px', borderRadius: 14,
