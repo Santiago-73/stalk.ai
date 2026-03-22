@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Plus, TrendingUp, Zap, BookOpen, FileText, ArrowRight, Layers, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import OnboardingModal from './OnboardingModal'
 
 const typeColor: Record<string, string> = {
     youtube: '#ff4444',
@@ -87,8 +88,11 @@ export default async function DashboardPage() {
     const isPro = plan === 'pro' || plan === 'ultra'
     const username = user?.email?.split('@')[0] ?? ''
 
+    const isNewUser = (subjectsCount ?? 0) === 0
+
     return (
         <div>
+            <OnboardingModal isNewUser={isNewUser} />
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 36 }}>
                 <div>
