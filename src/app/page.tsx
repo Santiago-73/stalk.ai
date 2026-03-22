@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   Eye, Zap, Bell, TrendingUp, Youtube, MessageSquare, Rss,
-  Check, ArrowRight, Radio, BookOpen, Sparkles, Tv
+  Check, ArrowRight, Radio, BookOpen, Sparkles, Tv, Lightbulb
 } from 'lucide-react'
 import PricingLink from './_components/PricingLink'
 
@@ -126,6 +126,7 @@ export default function HomePage() {
                   { label: 'Dashboard', active: false },
                   { label: 'Subjects', active: true },
                   { label: 'Digests', active: false },
+                  { label: 'Offer Builder', active: false, pro: true },
                   { label: 'Settings', active: false },
                 ].map((item, i) => (
                   <div key={i} style={{
@@ -133,8 +134,12 @@ export default function HomePage() {
                     background: item.active ? 'rgba(123,97,255,0.15)' : 'transparent',
                     color: item.active ? '#a78bfa' : 'var(--text-muted)',
                     border: item.active ? '1px solid rgba(123,97,255,0.2)' : '1px solid transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
                   }}>
-                    {item.label}
+                    <span>{item.label}</span>
+                    {item.pro && (
+                      <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}>PRO</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -312,6 +317,97 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Offer Builder feature highlight ──────────────────────────────── */}
+      <section className="lp-section" style={{ padding: '100px 40px', borderTop: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{
+            borderRadius: '2rem', overflow: 'hidden',
+            border: '1px solid rgba(16,185,129,0.3)',
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(52,211,153,0.03) 100%)',
+            boxShadow: '0 0 60px rgba(16,185,129,0.06)',
+          }}>
+            <div style={{ height: 4, background: 'linear-gradient(90deg, #10b981, #34d399, #7B61FF)' }} />
+            <div className="lp-offer-inner" style={{ padding: '56px 64px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+
+              {/* Left — copy */}
+              <div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)',
+                  borderRadius: 100, padding: '5px 14px', marginBottom: 24,
+                  fontSize: 11, color: '#10b981', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase'
+                }}>
+                  <Lightbulb size={11} /> Pro & Ultra exclusive
+                </div>
+                <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 800, marginBottom: 16, letterSpacing: '-1.5px', lineHeight: 1.1 }}>
+                  Turn your niche knowledge into a{' '}
+                  <span className="serif-italic" style={{ fontWeight: 400, color: '#34d399' }}>high-ticket offer</span>
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: 16, lineHeight: 1.8, marginBottom: 28, maxWidth: 440 }}>
+                  The Offer Builder interviews you across 6 stages to help you discover, structure and price a digital offer from your expertise — course, coaching, community or digital product.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                  {[
+                    'AI interview personalised to your tracked niches',
+                    'Covers background, skills, market, format & pricing',
+                    'Generates a full Content Business Blueprint',
+                    'Save your blueprint to Digests for future reference',
+                  ].map((f, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--text-secondary)' }}>
+                      <Check size={14} color="#10b981" style={{ flexShrink: 0 }} /> {f}
+                    </div>
+                  ))}
+                </div>
+                <Link href="/signup" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+                  Start building your offer <ArrowRight size={15} />
+                </Link>
+              </div>
+
+              {/* Right — mock interview UI */}
+              <div style={{
+                background: 'var(--bg-card)', borderRadius: '1.5rem',
+                border: '1px solid rgba(16,185,129,0.25)',
+                overflow: 'hidden',
+                boxShadow: '0 16px 48px rgba(0,0,0,0.25)'
+              }}>
+                <div style={{ height: 4, background: 'linear-gradient(90deg, #10b981, #34d399)' }} />
+                <div style={{ padding: '20px 24px' }}>
+                  {/* Stage bar */}
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+                    {['Background', 'Skills', 'Market', 'Offer', 'Validation', 'Positioning'].map((s, i) => (
+                      <div key={i} style={{ flex: 1, height: 3, borderRadius: 4, background: i < 2 ? '#10b981' : i === 2 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'var(--border)' }} />
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#10b981', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 16 }}>
+                    Stage 3 of 6 — Market Alignment
+                  </div>
+                  {/* Messages */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ padding: '10px 14px', borderRadius: '12px 12px 12px 4px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '85%' }}>
+                      Who would pay to learn what you know? Describe the person who needs your Minecraft content strategy the most.
+                    </div>
+                    <div style={{ padding: '10px 14px', borderRadius: '12px 12px 4px 12px', background: 'rgba(123,97,255,0.12)', border: '1px solid rgba(123,97,255,0.25)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '85%', alignSelf: 'flex-end' }}>
+                      Small YouTubers in the gaming niche, 1k–50k subs, who know how to play but struggle with content strategy and growth.
+                    </div>
+                    <div style={{ padding: '10px 14px', borderRadius: '12px 12px 12px 4px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '85%' }}>
+                      Perfect. What would it be worth to them to go from 5k to 50k subscribers in 6 months?
+                    </div>
+                  </div>
+                  {/* Input mock */}
+                  <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 10, background: 'var(--bg-secondary)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Your answer…</span>
+                    <div style={{ width: 24, height: 24, borderRadius: 6, background: 'linear-gradient(135deg,#10b981,#34d399)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <ArrowRight size={11} color="white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Pricing ──────────────────────────────────────────────────────── */}
       <section id="pricing" className="lp-section" style={{ padding: '120px 40px', borderTop: '1px solid var(--border)', scrollMarginTop: '90px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -354,6 +450,7 @@ export default function HomePage() {
                   'Advanced trend analysis (Gemini 2.5)',
                   'Daily digest by email every morning',
                   'Unlimited manual generations',
+                  'AI Offer Builder — discover your high-ticket digital offer',
                 ],
                 cta: 'Get Pro',
                 href: '/api/stripe/checkout?plan=pro',
@@ -368,6 +465,7 @@ export default function HomePage() {
                   'Unlimited subjects',
                   'All platforms',
                   'Deep Video Analysis — Gemini 2.5 analyzes the full YouTube video: hook, structure, why it worked, what you can replicate',
+                  'AI Offer Builder — discover your high-ticket digital offer',
                   'Priority support',
                 ],
                 cta: 'Get Ultra',
