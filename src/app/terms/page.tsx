@@ -54,7 +54,7 @@ export default function TermsPage() {
                     },
                     {
                         title: '11. Contact',
-                        body: 'For any questions regarding these terms, contact us at: sanespi012@gmail.com'
+                        body: 'For any questions regarding these terms, contact us at: hello@stalk-ai.com'
                     },
                 ].map((section, i) => (
                     <div key={i} style={{ marginBottom: 40, paddingBottom: 40, borderBottom: i < 10 ? '1px solid var(--border)' : 'none' }}>

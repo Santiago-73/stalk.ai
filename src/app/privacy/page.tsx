@@ -42,7 +42,7 @@ export default function PrivacyPage() {
                     },
                     {
                         title: '8. Contact',
-                        body: 'For any privacy-related questions or requests, contact us at: sanespi012@gmail.com'
+                        body: 'For any privacy-related questions or requests, contact us at: hello@stalk-ai.com'
                     },
                 ].map((section, i) => (
                     <div key={i} style={{ marginBottom: 40, paddingBottom: 40, borderBottom: i < 7 ? '1px solid var(--border)' : 'none' }}>

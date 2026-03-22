@@ -319,8 +319,13 @@ body::after {
   /* Landing page */
   .lp-nav-pill {
     top: 10px !important;
-    padding: 8px 14px !important;
-    gap: 12px !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+  .lp-nav-links a, .lp-nav-links button {
+    white-space: nowrap !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
   }
   .lp-nav {
     padding: 14px 20px !important;
