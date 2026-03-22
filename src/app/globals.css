@@ -345,11 +345,6 @@ body::after {
   .lp-pricing-grid {
     grid-template-columns: 1fr !important;
   }
-  .lp-offer-inner {
-    grid-template-columns: 1fr !important;
-    padding: 36px 24px !important;
-    gap: 32px !important;
-  }
   /* Subject detail page */
   .subject-layout-grid {
     grid-template-columns: 1fr !important;
