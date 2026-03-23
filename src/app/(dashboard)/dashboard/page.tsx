@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Plus, TrendingUp, Zap, BookOpen, FileText, ArrowRight, Layers, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import OnboardingModal from './OnboardingModal'
+import SeedExample from './SeedExample'
 
 const typeColor: Record<string, string> = {
     youtube: '#ff4444',
@@ -93,6 +94,7 @@ export default async function DashboardPage() {
     return (
         <div>
             <OnboardingModal isNewUser={isNewUser} />
+            <SeedExample shouldSeed={isNewUser} />
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 36 }}>
                 <div>
@@ -231,9 +233,22 @@ export default async function DashboardPage() {
                                     display: 'flex', flexDirection: 'column', gap: 12
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <h3 style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.3, flex: 1, paddingRight: 8 }}>
-                                            {subject.name}
-                                        </h3>
+                                        <div style={{ flex: 1, paddingRight: 8 }}>
+                                            {subject.description === 'Example subject — edit it or delete anytime' && (
+                                                <div style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                                                    fontSize: 10, fontWeight: 700, color: '#f59e0b',
+                                                    background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+                                                    borderRadius: 4, padding: '2px 7px', marginBottom: 6,
+                                                    textTransform: 'uppercase', letterSpacing: 0.5,
+                                                }}>
+                                                    Example · Edit or delete anytime
+                                                </div>
+                                            )}
+                                            <h3 style={{ fontWeight: 700, fontSize: 15, margin: 0, lineHeight: 1.3 }}>
+                                                {subject.name}
+                                            </h3>
+                                        </div>
                                         <div style={{
                                             background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)',
                                             borderRadius: 6, padding: '2px 8px', fontSize: 11, color: 'var(--accent-bright)',

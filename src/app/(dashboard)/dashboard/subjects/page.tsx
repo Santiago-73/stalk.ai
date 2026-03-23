@@ -160,8 +160,19 @@ export default function SubjectsPage() {
                                             <ArrowRight size={16} color="var(--text-muted)" />
                                         </div>
                                     </div>
+                                    {subject.description === 'Example subject — edit it or delete anytime' && (
+                                        <div style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                                            fontSize: 10, fontWeight: 700, color: '#f59e0b',
+                                            background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
+                                            borderRadius: 4, padding: '2px 7px', marginBottom: 8,
+                                            textTransform: 'uppercase', letterSpacing: 0.5,
+                                        }}>
+                                            Example · Edit or delete anytime
+                                        </div>
+                                    )}
                                     <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 6 }}>{subject.name}</div>
-                                    {subject.description && (
+                                    {subject.description && subject.description !== 'Example subject — edit it or delete anytime' && (
                                         <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 12 }}>
                                             {subject.description}
                                         </p>
