@@ -238,22 +238,25 @@ export async function GET(req: NextRequest) {
 
                     if (allTitles.length === 0) continue
 
-                    const subjectContext = subject.description
-                        ? `${subject.name} (${subject.description})`
-                        : subject.name
+                    const descriptionLine = subject.description
+                        ? `\ndescribed as: "${subject.description}"`
+                        : ''
 
                     const prompt = `You are a trend analyst for content creators.
-Below are the most recent posts/videos from multiple sources about ${subjectContext}. Analyze them together and provide:
 
-1. **Main trend this week** (1-2 sentences): What topic or format is gaining traction across these sources right now?
+You are analyzing content for a subject called "${subject.name}"${descriptionLine}.
 
-2. **What creators should know** (1-2 sentences): What is the audience engaging with? What angle is working?
+Below are the most recent posts/videos from multiple sources related to this subject. Analyze them together and provide:
 
-3. **Actionable insight** (1 sentence): One specific thing a creator in this niche could do with this information.
+1. **Main trend this week:** What specific topic or format is gaining traction across these sources right now? Be concrete, not generic.
 
-Write in the same language as the content. Be specific, not generic. If there is not enough data, say so honestly.
+2. **What creators should know:** What is the audience engaging with? What angle or approach is working? Give specific examples from the content analyzed.
 
-Sources:
+3. **Actionable insight:** One specific, concrete thing a creator in this niche could do THIS WEEK with this information. Not generic advice.
+
+Write in the same language as the content. If the content is in Spanish, respond in Spanish. If in English, respond in English. Be specific and actionable. Avoid generic statements that would apply to any niche. If there is not enough data to detect a real trend, say so honestly.
+
+Sources analyzed:
 ${sourceLines.join('\n\n')}`
 
                     let content: string

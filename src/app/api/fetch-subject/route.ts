@@ -457,10 +457,6 @@ export async function POST(req: NextRequest) {
 
         if (fetched.length === 0) return NextResponse.json({ error: 'Could not fetch content from any source', failed }, { status: 422 })
 
-        const subjectContext = typedSubject.description
-            ? `${typedSubject.name} (${typedSubject.description})`
-            : typedSubject.name
-
         const isPremium = plan === 'pro' || plan === 'ultra'
 
         const apiKey = process.env.GOOGLE_GEMINI_API_KEY_PAID
@@ -476,18 +472,25 @@ export async function POST(req: NextRequest) {
 
         if (apiKey) {
             try {
+                const descriptionLine = typedSubject.description
+                    ? `\ndescribed as: "${typedSubject.description}"`
+                    : ''
+
                 const trendPrompt = `You are a trend analyst for content creators.
-Below are the most recent posts/videos from multiple sources about ${subjectContext}. Analyze them together and provide:
 
-1. **Main trend this week** (1-2 sentences): What topic or format is gaining traction across these sources right now?
+You are analyzing content for a subject called "${typedSubject.name}"${descriptionLine}.
 
-2. **What creators should know** (1-2 sentences): What is the audience engaging with? What angle is working?
+Below are the most recent posts/videos from multiple sources related to this subject. Analyze them together and provide:
 
-3. **Actionable insight** (1 sentence): One specific thing a creator in this niche could do with this information.
+1. **Main trend this week:** What specific topic or format is gaining traction across these sources right now? Be concrete, not generic.
 
-Write in the same language as the content. Be specific, not generic. If there is not enough data, say so honestly.
+2. **What creators should know:** What is the audience engaging with? What angle or approach is working? Give specific examples from the content analyzed.
 
-Sources:
+3. **Actionable insight:** One specific, concrete thing a creator in this niche could do THIS WEEK with this information. Not generic advice.
+
+Write in the same language as the content. If the content is in Spanish, respond in Spanish. If in English, respond in English. Be specific and actionable. Avoid generic statements that would apply to any niche. If there is not enough data to detect a real trend, say so honestly.
+
+Sources analyzed:
 ${sourceLines}`
 
                 const raw = await geminiGenerate(trendPrompt, apiKey, isPremium)
