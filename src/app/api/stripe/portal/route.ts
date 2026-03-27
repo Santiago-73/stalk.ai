@@ -18,10 +18,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/settings', request.url))
     }
 
-    const session = await stripe.billingPortal.sessions.create({
-        customer: profile.stripe_customer_id,
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
-    })
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin}/settings`
 
-    return NextResponse.redirect(session.url)
+    try {
+        const session = await stripe.billingPortal.sessions.create({
+            customer: profile.stripe_customer_id,
+            return_url: returnUrl,
+        })
+        return NextResponse.redirect(session.url)
+    } catch (error: any) {
+        console.error('Stripe Portal Error:', error)
+        // Portal not configured or customer invalid — redirect back to settings
+        return NextResponse.redirect(new URL('/settings?portal_error=true', request.url))
+    }
 }

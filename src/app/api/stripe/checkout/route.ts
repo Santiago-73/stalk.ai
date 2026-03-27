@@ -9,8 +9,9 @@ export async function GET(request: NextRequest) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
 
     const plan = request.nextUrl.searchParams.get('plan') as 'pro' | 'ultra' | null
-    if (!plan || !PLANS[plan]?.priceId) {
-        return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+    if (!plan || !(plan in PLANS) || !PLANS[plan as keyof typeof PLANS]?.priceId) {
+        console.error('Stripe Checkout: invalid plan or missing priceId env var', { plan, priceId: PLANS[plan as keyof typeof PLANS]?.priceId })
+        return NextResponse.json({ error: 'Invalid plan or price not configured' }, { status: 400 })
     }
 
     const { data: profile } = await supabase
@@ -19,14 +20,16 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id)
         .single()
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin
+
     try {
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             customer: profile?.stripe_customer_id || undefined,
             customer_email: !profile?.stripe_customer_id ? user.email : undefined,
-            line_items: [{ price: PLANS[plan].priceId!, quantity: 1 }],
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?success=true`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings?canceled=true`,
+            line_items: [{ price: PLANS[plan as keyof typeof PLANS].priceId!, quantity: 1 }],
+            success_url: `${appUrl}/settings?success=true`,
+            cancel_url: `${appUrl}/settings?canceled=true`,
             metadata: { userId: user.id, plan },
         })
 

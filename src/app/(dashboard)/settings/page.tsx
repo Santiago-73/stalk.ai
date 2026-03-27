@@ -93,6 +93,7 @@ export default async function SettingsPage() {
                                 ) : (
                                     <Link
                                         href={`/api/stripe/checkout?plan=${plan}`}
+                                        prefetch={false}
                                         className="btn-primary"
                                         style={{ fontSize: 13, padding: '8px 16px', justifyContent: 'center', display: 'flex' }}
                                     >
@@ -107,6 +108,7 @@ export default async function SettingsPage() {
                 {currentPlan !== 'free' && (
                     <Link
                         href="/api/stripe/portal"
+                        prefetch={false}
                         className="btn-secondary"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
                     >
