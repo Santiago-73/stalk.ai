@@ -38,13 +38,13 @@ export default function LoginPage() {
                             Stalk<span style={{ color: 'var(--accent-bright)' }}>.ai</span>
                         </span>
                     </Link>
-                    <p style={{ color: 'var(--text-muted)', marginTop: 8, fontSize: 14 }}>Welcome back</p>
+                    <p style={{ color: 'var(--text-muted)', marginTop: 8, fontSize: 14 }}>Stalk your niche. Own the trend.</p>
                 </div>
 
                 <div className="card" style={{ padding: 32, borderRadius: 16 }}>
-                    <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Log in to your account</h1>
+                    <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Sign in to Stalkai</h1>
                     <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>
-                        Sign in with your Google account to continue.
+                        No password needed. One click and you&apos;re in.
                     </p>
 
                     <button
@@ -66,14 +66,14 @@ export default function LoginPage() {
                         </svg>
                         {loading ? 'Redirecting...' : 'Continue with Google'}
                     </button>
-                </div>
 
-                <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: 14 }}>
-                    Don&apos;t have an account?{' '}
-                    <Link href="/signup" style={{ color: 'var(--accent-bright)', textDecoration: 'none', fontWeight: 600 }}>
-                        Sign up free
-                    </Link>
-                </p>
+                    <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: 12 }}>
+                        By continuing you agree to our{' '}
+                        <Link href="/terms" style={{ color: 'var(--accent-bright)', textDecoration: 'none' }}>Terms</Link>
+                        {' '}and{' '}
+                        <Link href="/privacy" style={{ color: 'var(--accent-bright)', textDecoration: 'none' }}>Privacy Policy</Link>.
+                    </p>
+                </div>
             </div>
         </div>
     )

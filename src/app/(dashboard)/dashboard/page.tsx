@@ -7,21 +7,13 @@ import SeedExample from './SeedExample'
 const typeColor: Record<string, string> = {
     youtube: '#ff4444',
     reddit: '#ff6314',
-    bluesky: '#0285FF',
-    tiktok: '#000000',
-    substack: '#ff6719',
-    github: '#e2e8f0',
-    twitter: '#1d9bf0',
+    twitch: '#9146ff',
 }
 
 const typeLabel: Record<string, string> = {
     youtube: 'YouTube',
     reddit: 'Reddit',
-    bluesky: 'Bluesky',
-    tiktok: 'TikTok',
-    substack: 'Substack',
-    github: 'GitHub',
-    twitter: 'Twitter/X',
+    twitch: 'Twitch',
 }
 
 interface Subject {
@@ -303,7 +295,7 @@ export default async function DashboardPage() {
                             <span style={{ fontWeight: 700, fontSize: 15 }}>Upgrade to Pro</span>
                         </div>
                         <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: 0 }}>
-                            Unlock Reddit, TikTok, Substack, GitHub tracking + up to 50 subjects + richer AI digests.
+                            Unlock Reddit + Twitch tracking, up to 50 subjects, daily email digests + unlimited generations.
                         </p>
                     </div>
                     <Link href="https://stalk-ai.com/#pricing" style={{

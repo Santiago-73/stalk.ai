@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import {
   Eye, Zap, Bell, Youtube, MessageSquare,
-  Check, ArrowRight, Radio, BookOpen, Sparkles, Tv
+  Check, ArrowRight, Radio, Sparkles, Tv
 } from 'lucide-react'
 import PricingLink from './_components/PricingLink'
 
@@ -28,8 +28,7 @@ export default function HomePage() {
 
         <div className="lp-nav-links" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <PricingLink className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13 }}>Pricing</PricingLink>
-          <Link href="/login" className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13 }}>Log in</Link>
-          <Link href="/signup" className="btn-primary" style={{ padding: '7px 18px', fontSize: 13 }}>
+          <Link href="/login" className="btn-primary" style={{ padding: '7px 18px', fontSize: 13 }}>
             Start free <ArrowRight size={13} />
           </Link>
         </div>
@@ -90,7 +89,7 @@ export default function HomePage() {
           </p>
 
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/signup" className="btn-primary animate-pulse-glow" style={{ fontSize: 16, padding: '15px 32px' }}>
+            <Link href="/login" className="btn-primary animate-pulse-glow" style={{ fontSize: 16, padding: '15px 32px' }}>
               Get started free <ArrowRight size={16} />
             </Link>
             <PricingLink className="btn-secondary" style={{ fontSize: 16, padding: '15px 28px' }}>
@@ -264,47 +263,21 @@ export default function HomePage() {
               Supported platforms
             </p>
 
-            {/* Free */}
-            <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14, textAlign: 'center' }}>
-                Free plan
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-                {[
-                  { icon: <Youtube size={18} />, name: 'YouTube', color: '#ff4444' },
-                  { icon: <span style={{ fontWeight: 900, fontSize: 14, letterSpacing: '-0.5px' }}>Bs</span>, name: 'Bluesky', color: '#1690ff' },
-                ].map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
-                    background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 100,
-                    color: s.color, fontWeight: 600, fontSize: 14, transition: 'border-color 0.2s'
-                  }}>
-                    {s.icon} {s.name}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Pro */}
-            <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14, textAlign: 'center' }}>
-                ⚡ Pro & Ultra
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-                {[
-                  { icon: <MessageSquare size={18} />, name: 'Reddit', color: '#ff6314' },
-                  { icon: <BookOpen size={18} />, name: 'Substack', color: '#ff6719' },
-                  { icon: <Tv size={18} />, name: 'Twitch', color: '#9146ff' },
-                ].map((s, i) => (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
-                    background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 100,
-                    color: s.color, fontWeight: 600, fontSize: 14
-                  }}>
-                    {s.icon} {s.name}
-                  </div>
-                ))}
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {[
+                { icon: <Youtube size={18} />, name: 'YouTube', color: '#ff4444', note: 'Free' },
+                { icon: <MessageSquare size={18} />, name: 'Reddit', color: '#ff6314', note: 'Pro' },
+                { icon: <Tv size={18} />, name: 'Twitch', color: '#9146ff', note: 'Pro' },
+              ].map((s, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 100,
+                  color: s.color, fontWeight: 600, fontSize: 14, transition: 'border-color 0.2s'
+                }}>
+                  {s.icon} {s.name}
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700 }}>{s.note}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -331,14 +304,13 @@ export default function HomePage() {
                 price: '0',
                 desc: 'Perfect to get started',
                 features: [
-                  'Up to 3 sources per subject',
                   'Up to 3 subjects',
-                  'YouTube, Bluesky, HN & RSS',
-                  'AI digest',
-                  'Basic dashboard',
+                  '3 sources per subject',
+                  'YouTube only',
+                  '1 manual digest per day per subject',
                 ],
                 cta: 'Start for free',
-                href: '/signup',
+                href: '/login',
                 highlight: false
               },
               {
@@ -346,12 +318,11 @@ export default function HomePage() {
                 price: '9',
                 desc: 'For creators who need an edge',
                 features: [
-                  'Up to 15 sources per subject',
                   'Up to 50 subjects',
-                  'All platforms (Reddit, Twitch, Substack…)',
-                  'Advanced trend analysis (Gemini 2.5)',
+                  '15 sources per subject',
+                  'YouTube + Reddit + Twitch',
                   'Daily digest by email every morning',
-                  'Unlimited manual generations',
+                  'Unlimited generations',
                 ],
                 cta: 'Get Pro',
                 href: '/api/stripe/checkout?plan=pro',
@@ -362,9 +333,8 @@ export default function HomePage() {
                 price: '19',
                 desc: 'For serious creators',
                 features: [
-                  'Unlimited sources per subject',
-                  'Unlimited subjects',
-                  'All platforms',
+                  'Unlimited subjects & sources',
+                  'Everything in Pro',
                   'Deep Video Analysis — Gemini 2.5 analyzes the full YouTube video: hook, structure, why it worked, what you can replicate',
                   'Priority support',
                 ],
@@ -440,8 +410,7 @@ export default function HomePage() {
         <span>© 2026 Stalk.ai. All rights reserved.</span>
 
         <div className="lp-footer-links" style={{ display: 'flex', gap: 24 }}>
-          <Link href="/login" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Login</Link>
-          <Link href="/signup" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Sign up</Link>
+          <Link href="/login" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Sign in</Link>
           <Link href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy Policy</Link>
           <Link href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Terms of Service</Link>
         </div>

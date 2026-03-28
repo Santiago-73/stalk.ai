@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 
-type SourceType = 'youtube' | 'reddit' | 'twitch' | 'bluesky' | 'substack'
+type SourceType = 'youtube' | 'reddit' | 'twitch'
 
 interface Source {
     id: string
@@ -37,11 +37,9 @@ interface Subject {
 }
 
 const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean }> = {
-    youtube:    { icon: <Youtube size={15} />,       color: '#ff4444', label: 'YouTube',     placeholder: 'https://youtube.com/@channelname' },
-    reddit:   { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',    placeholder: 'https://reddit.com/r/subreddit',        proOnly: true },
-    twitch:   { icon: <Twitch size={15} />,        color: '#9146ff', label: 'Twitch',    placeholder: 'https://twitch.tv/username',            proOnly: true },
-    bluesky:  { icon: <span style={{ fontWeight: 800, fontSize: 13 }}>Bs</span>, color: '#0285FF', label: 'Bluesky', placeholder: 'https://bsky.app/profile/username' },
-    substack: { icon: <span style={{ fontWeight: 800, fontSize: 13 }}>S</span>,  color: '#ff6719', label: 'Substack', placeholder: 'https://example.substack.com',   proOnly: true },
+    youtube: { icon: <Youtube size={15} />,       color: '#ff4444', label: 'YouTube', placeholder: 'https://youtube.com/@channelname' },
+    reddit:  { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',  placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
+    twitch:  { icon: <Twitch size={15} />,        color: '#9146ff', label: 'Twitch',  placeholder: 'https://twitch.tv/username',     proOnly: true },
 }
 
 

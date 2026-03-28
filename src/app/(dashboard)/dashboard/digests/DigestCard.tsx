@@ -1,6 +1,6 @@
 'use client'
 
-import { Youtube, MessageSquare, Rss, Sparkles, ExternalLink, Clock, Twitter, ChevronDown, Zap } from 'lucide-react'
+import { Youtube, MessageSquare, Sparkles, ExternalLink, Clock, ChevronDown, Zap, Tv } from 'lucide-react'
 import { useState } from 'react'
 
 interface Thumbnail {
@@ -23,21 +23,15 @@ interface Digest {
 function SourceIcon({ type }: { type: string }) {
     if (type === 'youtube') return <Youtube size={16} />
     if (type === 'reddit') return <MessageSquare size={16} />
-    if (type === 'twitter') return <Twitter size={16} />
-    if (type === 'bluesky') return <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.5px' }}>Bs</span>
-    if (type === 'hackernews') return <span style={{ fontWeight: 800, fontSize: 13, background: '#ff6600', color: '#fff', padding: '0 2px' }}>Y</span>
-    return <Rss size={16} />
+    if (type === 'twitch') return <Tv size={16} />
+    return <Youtube size={16} />
 }
 
 function sourceColor(type: string) {
     if (type === 'youtube') return { bg: 'rgba(239,68,68,0.2)', color: '#ff6b6b', border: 'rgba(255,107,107,0.4)', gradient: 'linear-gradient(135deg, #ff4757, #ff6b6b)' }
-    if (type === 'twitter') return { bg: 'rgba(29,155,240,0.2)', color: '#1da9f0', border: 'rgba(29,155,240,0.4)', gradient: 'linear-gradient(135deg, #1da9f0, #55acee)' }
-    if (type === 'bluesky') return { bg: 'rgba(26,144,255,0.2)', color: '#1690ff', border: 'rgba(26,144,255,0.4)', gradient: 'linear-gradient(135deg, #1690ff, #5ba3ff)' }
-    if (type === 'hackernews') return { bg: 'rgba(255,102,0,0.2)', color: '#ff6600', border: 'rgba(255,102,0,0.4)', gradient: 'linear-gradient(135deg, #ff6600, #ff8533)' }
     if (type === 'reddit') return { bg: 'rgba(255,145,0,0.2)', color: '#ff9100', border: 'rgba(255,145,0,0.4)', gradient: 'linear-gradient(135deg, #ff7e22, #ff9100)' }
+    if (type === 'twitch') return { bg: 'rgba(145,70,255,0.2)', color: '#9146ff', border: 'rgba(145,70,255,0.4)', gradient: 'linear-gradient(135deg, #7c3aed, #9146ff)' }
     if (type === 'subject') return { bg: 'rgba(124,58,237,0.2)', color: '#a78bfa', border: 'rgba(124,58,237,0.4)', gradient: 'linear-gradient(135deg, #7c3aed, #a78bfa)' }
-    if (type === 'substack') return { bg: 'rgba(255,103,25,0.2)', color: '#ff6719', border: 'rgba(255,103,25,0.4)', gradient: 'linear-gradient(135deg, #ff6719, #ff8c4b)' }
-    if (type === 'github') return { bg: 'rgba(226,232,240,0.15)', color: '#e2e8f0', border: 'rgba(226,232,240,0.3)', gradient: 'linear-gradient(135deg, #94a3b8, #e2e8f0)' }
     return { bg: 'rgba(102,117,255,0.2)', color: '#6675ff', border: 'rgba(102,117,255,0.4)', gradient: 'linear-gradient(135deg, #6675ff, #7c97ff)' }
 }
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Plus, Youtube, MessageSquare, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Tv } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type SourceType = 'youtube' | 'reddit' | 'bluesky' | 'twitch' | 'substack'
+type SourceType = 'youtube' | 'reddit' | 'twitch'
 
 interface Source {
     id: string
@@ -20,12 +20,6 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
         label: 'YouTube',
         placeholder: 'https://youtube.com/@channelname'
     },
-    bluesky: {
-        icon: <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.5px' }}>Bs</span>,
-        color: '#0285FF',
-        label: 'Bluesky',
-        placeholder: 'https://bsky.app/profile/username'
-    },
     reddit: {
         icon: <MessageSquare size={16} />,
         color: '#ff6314',
@@ -38,13 +32,6 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
         color: '#9146ff',
         label: 'Twitch',
         placeholder: 'https://twitch.tv/username',
-        proOnly: true
-    },
-    substack: {
-        icon: <span style={{ fontWeight: 800, fontSize: 13 }}>S</span>,
-        color: '#ff6719',
-        label: 'Substack',
-        placeholder: 'https://example.substack.com',
         proOnly: true
     },
 }
@@ -197,7 +184,7 @@ export default function SourcesPage() {
                     </div>
                     <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Add your first source</h2>
                     <p style={{ color: 'var(--text-secondary)', maxWidth: 380, margin: '0 auto 28px', lineHeight: 1.7 }}>
-                        Track YouTube channels, Reddit communities, or any RSS/blog feed.
+                        Track YouTube channels, Reddit communities, or Twitch streams.
                     </p>
                     <button className="btn-primary" onClick={() => setShowModal(true)} style={{ fontSize: 16, padding: '12px 28px' }}>
                         <Plus size={16} /> Get started
@@ -289,7 +276,7 @@ export default function SourcesPage() {
                             <label style={{ display: 'block', marginBottom: 10, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
                                 Source type
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                                 {(Object.keys(typeConfig) as SourceType[]).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type
