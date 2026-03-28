@@ -274,7 +274,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {sources.map(source => {
-                                const config = typeConfig[source.type] ?? typeConfig.rss
+                                const config = typeConfig[source.type] ?? typeConfig.youtube
                                 return (
                                     <div key={source.id} className="card" style={{
                                         padding: '12px 16px', display: 'flex',
