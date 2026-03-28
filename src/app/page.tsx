@@ -27,6 +27,7 @@ export default function HomePage() {
         <div style={{ flex: 1 }} />
 
         <div className="lp-nav-links" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <a href="#how-it-works" className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13, textDecoration: 'none' }}>How it works</a>
           <PricingLink className="btn-secondary" style={{ padding: '7px 16px', fontSize: 13 }}>Pricing</PricingLink>
           <Link href="/login" className="btn-primary" style={{ padding: '7px 18px', fontSize: 13 }}>
             Start free <ArrowRight size={13} />
@@ -196,7 +197,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Features ─────────────────────────────────────────────────────── */}
-      <section className="lp-section" style={{ padding: '120px 40px', borderTop: '1px solid var(--border)' }}>
+      <section id="how-it-works" className="lp-section" style={{ padding: '120px 40px', borderTop: '1px solid var(--border)', scrollMarginTop: 80 }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 72 }}>
             <p className="mono" style={{ color: 'var(--text-muted)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 16 }}>
