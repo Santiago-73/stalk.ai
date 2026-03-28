@@ -23,6 +23,7 @@ export default function SubjectsPage() {
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
     const [saving, setSaving] = useState(false)
+    const [createError, setCreateError] = useState('')
     const [plan, setPlan] = useState<string>('free')
     const supabase = createClient()
     const router = useRouter()
@@ -52,8 +53,13 @@ export default function SubjectsPage() {
     async function createSubject() {
         if (!name.trim() || limitReached) return
         setSaving(true)
+        setCreateError('')
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user) {
+            setSaving(false)
+            setCreateError('Not authenticated. Please reload and try again.')
+            return
+        }
         const { data, error } = await supabase
             .from('subjects')
             .insert({ name: name.trim(), description: description.trim(), user_id: user.id })
@@ -61,8 +67,10 @@ export default function SubjectsPage() {
             .single()
         if (!error && data) {
             router.push(`/dashboard/subjects/${data.id}`)
+        } else {
+            setCreateError(error?.message ?? 'Failed to create subject. Try again.')
+            setSaving(false)
         }
-        setSaving(false)
     }
 
     async function deleteSubject(e: React.MouseEvent, id: string) {
@@ -232,6 +240,16 @@ export default function SubjectsPage() {
                                 className="input"
                             />
                         </div>
+
+                        {createError && (
+                            <div style={{
+                                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                                borderRadius: 8, padding: '10px 14px', marginBottom: 16,
+                                color: '#fca5a5', fontSize: 13
+                            }}>
+                                {createError}
+                            </div>
+                        )}
 
                         <div style={{ display: 'flex', gap: 12 }}>
                             <button className="btn-secondary" onClick={() => setShowModal(false)} style={{ flex: 1, justifyContent: 'center' }}>
