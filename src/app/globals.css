@@ -342,8 +342,21 @@ body::after {
   .lp-features-grid {
     grid-template-columns: 1fr !important;
   }
+  .lp-features-2col {
+    grid-template-columns: 1fr !important;
+  }
+  .lp-digest-layout {
+    grid-template-columns: 1fr !important;
+    gap: 40px !important;
+  }
+  .lp-comparison-grid {
+    grid-template-columns: 1fr !important;
+  }
   .lp-pricing-grid {
     grid-template-columns: 1fr !important;
+  }
+  .lp-mock-sidebar {
+    display: none !important;
   }
   /* Subject detail page */
   .subject-layout-grid {
