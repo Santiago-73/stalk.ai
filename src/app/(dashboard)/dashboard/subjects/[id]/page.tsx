@@ -329,9 +329,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                         }}>
                             <div style={{
                                 width: 56, height: 56, borderRadius: 14, margin: '0 auto 16px',
-                                background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
                             }}>
-                                <Rss size={26} color="#10b981" />
+                                <Zap size={26} color="var(--accent-bright)" />
                             </div>
                             <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
                                 {sources.length === 0
