@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, Youtube, MessageSquare, Rss, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Twitter, TrendingUp, Music } from 'lucide-react'
+import { Plus, Youtube, MessageSquare, Trash2, Radio, Loader2, RefreshCw, CheckCircle, Tv } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'twitter' | 'bluesky' | 'hackernews' | 'tiktok'
+type SourceType = 'youtube' | 'reddit' | 'bluesky' | 'twitch' | 'substack'
 
 interface Source {
     id: string
@@ -13,24 +13,12 @@ interface Source {
     url: string
 }
 
-const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string }> = {
+const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean }> = {
     youtube: {
         icon: <Youtube size={16} />,
         color: '#ff4444',
         label: 'YouTube',
         placeholder: 'https://youtube.com/@channelname'
-    },
-    reddit: {
-        icon: <MessageSquare size={16} />,
-        color: '#ff6314',
-        label: 'Reddit',
-        placeholder: 'https://reddit.com/r/subredditname'
-    },
-    twitter: {
-        icon: <Twitter size={16} />,
-        color: '#1da9f0',
-        label: 'Twitter/X',
-        placeholder: 'https://twitter.com/@username'
     },
     bluesky: {
         icon: <span style={{ fontWeight: 800, fontSize: 13, letterSpacing: '-0.5px' }}>Bs</span>,
@@ -38,24 +26,27 @@ const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; lab
         label: 'Bluesky',
         placeholder: 'https://bsky.app/profile/username'
     },
-    hackernews: {
-        icon: <span style={{ fontWeight: 800, fontSize: 13, background: '#ff6600', color: '#fff', padding: '0 3px' }}>Y</span>,
-        color: '#ff6600',
-        label: 'Hacker News',
-        placeholder: 'https://news.ycombinator.com'
+    reddit: {
+        icon: <MessageSquare size={16} />,
+        color: '#ff6314',
+        label: 'Reddit',
+        placeholder: 'https://reddit.com/r/subredditname',
+        proOnly: true
     },
-    tiktok: {
-        icon: <Music size={16} />,
-        color: '#ff0050',
-        label: 'TikTok',
-        placeholder: 'https://tiktok.com/@username'
+    twitch: {
+        icon: <Tv size={16} />,
+        color: '#9146ff',
+        label: 'Twitch',
+        placeholder: 'https://twitch.tv/username',
+        proOnly: true
     },
-    rss: {
-        icon: <Rss size={16} />,
-        color: '#10b981',
-        label: 'RSS / Blog',
-        placeholder: 'https://example.com/feed.xml'
-    }
+    substack: {
+        icon: <span style={{ fontWeight: 800, fontSize: 13 }}>S</span>,
+        color: '#ff6719',
+        label: 'Substack',
+        placeholder: 'https://example.substack.com',
+        proOnly: true
+    },
 }
 
 export default function SourcesPage() {
@@ -215,7 +206,7 @@ export default function SourcesPage() {
             ) : (
                 <div style={{ display: 'grid', gap: 12 }}>
                     {sources.map(source => {
-                        const config = typeConfig[source.type] ?? typeConfig.rss
+                        const config = typeConfig[source.type] ?? typeConfig.youtube
                         const isGenerating = generatingId === source.id
                         const justDone = toastId === source.id
                         return (
@@ -302,7 +293,7 @@ export default function SourcesPage() {
                                 {(Object.keys(typeConfig) as SourceType[]).map(type => {
                                     const c = typeConfig[type]
                                     const active = selectedType === type
-                                    const unstable = type === 'reddit' || type === 'tiktok'
+                                    const unstable = type === 'reddit'
                                     return (
                                         <button
                                             key={type}
@@ -329,7 +320,7 @@ export default function SourcesPage() {
                                     )
                                 })}
                             </div>
-                            {(selectedType === 'reddit' || selectedType === 'tiktok') && (
+                            {selectedType === 'reddit' && (
                                 <div style={{
                                     marginTop: 10, padding: '10px 14px', borderRadius: 10,
                                     background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)',

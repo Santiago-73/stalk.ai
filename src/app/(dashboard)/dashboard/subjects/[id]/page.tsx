@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Rss, TrendingUp, Zap,
+    Youtube, MessageSquare, Zap,
     Twitch
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 
-type SourceType = 'youtube' | 'reddit' | 'rss' | 'hackernews' | 'twitch'
+type SourceType = 'youtube' | 'reddit' | 'twitch' | 'bluesky' | 'substack'
 
 interface Source {
     id: string
@@ -38,11 +38,10 @@ interface Subject {
 
 const typeConfig: Record<SourceType, { icon: React.ReactNode; color: string; label: string; placeholder: string; proOnly?: boolean }> = {
     youtube:    { icon: <Youtube size={15} />,       color: '#ff4444', label: 'YouTube',     placeholder: 'https://youtube.com/@channelname' },
-    hackernews: { icon: <TrendingUp size={15} />,    color: '#ff6600', label: 'Hacker News', placeholder: 'https://news.ycombinator.com/top' },
-    rss:        { icon: <Rss size={15} />,           color: '#10b981', label: 'RSS / Blog',  placeholder: 'https://example.com/feed.xml' },
-    // Pro-only
-    reddit: { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit', placeholder: 'https://reddit.com/r/subreddit', proOnly: true },
-    twitch: { icon: <Twitch size={15} />,        color: '#9146ff', label: 'Twitch', placeholder: 'https://twitch.tv/username',     proOnly: true },
+    reddit:   { icon: <MessageSquare size={15} />, color: '#ff6314', label: 'Reddit',    placeholder: 'https://reddit.com/r/subreddit',        proOnly: true },
+    twitch:   { icon: <Twitch size={15} />,        color: '#9146ff', label: 'Twitch',    placeholder: 'https://twitch.tv/username',            proOnly: true },
+    bluesky:  { icon: <span style={{ fontWeight: 800, fontSize: 13 }}>Bs</span>, color: '#0285FF', label: 'Bluesky', placeholder: 'https://bsky.app/profile/username' },
+    substack: { icon: <span style={{ fontWeight: 800, fontSize: 13 }}>S</span>,  color: '#ff6719', label: 'Substack', placeholder: 'https://example.substack.com',   proOnly: true },
 }
 
 

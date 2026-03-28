@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import {
-  Eye, Zap, Bell, TrendingUp, Youtube, MessageSquare, Rss,
+  Eye, Zap, Bell, Youtube, MessageSquare,
   Check, ArrowRight, Radio, BookOpen, Sparkles, Tv
 } from 'lucide-react'
 import PricingLink from './_components/PricingLink'
@@ -273,8 +273,6 @@ export default function HomePage() {
                 {[
                   { icon: <Youtube size={18} />, name: 'YouTube', color: '#ff4444' },
                   { icon: <span style={{ fontWeight: 900, fontSize: 14, letterSpacing: '-0.5px' }}>Bs</span>, name: 'Bluesky', color: '#1690ff' },
-                  { icon: <TrendingUp size={18} />, name: 'Hacker News', color: '#ff6600' },
-                  { icon: <Rss size={18} />, name: 'RSS / Blogs', color: '#10b981' },
                 ].map((s, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
