@@ -1,6 +1,6 @@
 'use client'
 
-import { Youtube, MessageSquare, Sparkles, ExternalLink, Clock, ChevronDown, Zap, Tv } from 'lucide-react'
+import { Youtube, MessageSquare, Sparkles, ExternalLink, Clock, ChevronDown, ChevronRight, Zap, Tv } from 'lucide-react'
 import { useState } from 'react'
 
 interface Thumbnail {
@@ -56,6 +56,33 @@ function isAIGenerated(content: string): boolean {
     return isRichFormat(content) ||
         content.includes('**📌') || content.includes('**💡') ||
         (content.includes('•') && !content.startsWith('•'))
+}
+
+/** Split digest content into TL;DR and Full Analysis sections */
+function splitDigestSections(content: string): { tldr: string | null; fullAnalysis: string | null } {
+    // Try to find the TL;DR section
+    const tldrMatch = content.match(/\*\*⚡\s*TL;DR\*\*\s*\n([\s\S]*?)(?:\n---|\n\*\*📊)/)
+    const fullMatch = content.match(/\*\*📊\s*Full Analysis\*\*\s*\n([\s\S]*)/)
+
+    if (tldrMatch && fullMatch) {
+        return {
+            tldr: tldrMatch[1].trim(),
+            fullAnalysis: fullMatch[1].trim(),
+        }
+    }
+
+    // Fallback: try splitting by --- separator
+    const parts = content.split(/\n---\n/)
+    if (parts.length >= 2) {
+        const first = parts[0].replace(/\*\*⚡\s*TL;DR\*\*\s*\n?/, '').trim()
+        const rest = parts.slice(1).join('\n---\n').replace(/\*\*📊\s*Full Analysis\*\*\s*\n?/, '').trim()
+        if (first && rest) {
+            return { tldr: first, fullAnalysis: rest }
+        }
+    }
+
+    // No TL;DR format detected (legacy digest)
+    return { tldr: null, fullAnalysis: null }
 }
 
 /** Parse **bold** and [text](url) inline markdown into React nodes */
@@ -225,13 +252,18 @@ export default function DigestCard({ digest, userPlan }: { digest: Digest; userP
     const col = sourceColor(digest.source_type)
     const thumbnails = digest.metadata?.thumbnails ?? []
     const [isExpanded, setIsExpanded] = useState(false)
+    const [showFullAnalysis, setShowFullAnalysis] = useState(false)
 
     const isPremiumUser = userPlan === 'pro' || userPlan === 'ultra'
     const rich = isPremiumUser && (isRichFormat(digest.content) || (digest.source_type === 'subject' && isAIGenerated(digest.content)))
     const aiGen = isAIGenerated(digest.content)
 
-    // Preview: prefer the first real bullet, stripped of markdown
+    const { tldr, fullAnalysis } = splitDigestSections(digest.content)
+    const hasSections = tldr !== null && fullAnalysis !== null
+
+    // Preview: use TL;DR if available, otherwise fall back to old logic
     const contentPreview = (() => {
+        if (tldr) return tldr.replace(/\*\*/g, '').slice(0, 160)
         const lines = digest.content.split('\n')
         const bullet = lines.find(l => l.trim().startsWith('•') || l.trim().startsWith('-'))
         if (bullet) return bullet.replace(/^[•\-]\s*/, '').replace(/\*\*/g, '').slice(0, 130)
@@ -379,12 +411,66 @@ export default function DigestCard({ digest, userPlan }: { digest: Digest; userP
                                 </div>
                             </div>
                             {thumbnails.length > 0 && <ThumbnailGrid thumbnails={thumbnails} sourceType={digest.source_type} />}
-                            <div style={{
-                                background: 'rgba(255,255,255,0.02)', borderRadius: 12,
-                                padding: '16px', border: '1px solid var(--border)'
-                            }}>
-                                <DigestContent content={digest.content} accentColor={col.gradient} />
-                            </div>
+
+                            {/* TL;DR + Full Analysis layout */}
+                            {hasSections ? (
+                                <>
+                                    {/* TL;DR block */}
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(250,204,21,0.06) 100%)',
+                                        border: '1px solid rgba(124,58,237,0.3)',
+                                        borderRadius: 14, padding: '18px 20px',
+                                    }}>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10,
+                                            fontSize: 12, fontWeight: 800, color: '#fbbf24',
+                                            textTransform: 'uppercase', letterSpacing: 0.5,
+                                        }}>
+                                            <Zap size={13} /> TL;DR
+                                        </div>
+                                        <div style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.7, fontWeight: 500 }}>
+                                            {parseInline(tldr!, '#a78bfa')}
+                                        </div>
+                                    </div>
+
+                                    {/* Full Analysis toggle */}
+                                    <div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowFullAnalysis(!showFullAnalysis) }}
+                                            style={{
+                                                background: 'none', border: '1px solid var(--border)',
+                                                borderRadius: 10, padding: '10px 16px', cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', gap: 8,
+                                                fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)',
+                                                width: '100%', transition: 'all 0.15s',
+                                            }}
+                                        >
+                                            <ChevronRight size={14} style={{
+                                                transition: 'transform 0.2s',
+                                                transform: showFullAnalysis ? 'rotate(90deg)' : 'rotate(0deg)',
+                                            }} />
+                                            📊 Read full analysis
+                                        </button>
+
+                                        {showFullAnalysis && (
+                                            <div style={{
+                                                background: 'rgba(255,255,255,0.02)', borderRadius: 12,
+                                                padding: '16px', border: '1px solid var(--border)',
+                                                marginTop: 12, animation: 'digestCardIn 0.2s ease',
+                                            }}>
+                                                <DigestContent content={fullAnalysis!} accentColor={col.gradient} />
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.02)', borderRadius: 12,
+                                    padding: '16px', border: '1px solid var(--border)'
+                                }}>
+                                    <DigestContent content={digest.content} accentColor={col.gradient} />
+                                </div>
+                            )}
                         </div>
                         <div
                             onClick={() => setIsExpanded(false)}

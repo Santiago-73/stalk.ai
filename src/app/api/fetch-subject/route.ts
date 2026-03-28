@@ -480,13 +480,25 @@ export async function POST(req: NextRequest) {
 
 You are analyzing content for a subject called "${typedSubject.name}"${descriptionLine}.
 
-Below are the most recent posts/videos from multiple sources related to this subject. Analyze them together and provide:
+Below are the most recent posts/videos from multiple sources related to this subject. Analyze them together and provide your analysis in TWO parts.
 
-1. **Main trend this week:** What specific topic or format is gaining traction across these sources right now? Be concrete, not generic.
+Format your response EXACTLY like this (keep the headers and separator exactly as shown):
 
-2. **What creators should know:** What is the audience engaging with? What angle or approach is working? Give specific examples from the content analyzed.
+**⚡ TL;DR**
+[2-3 sentences MAX. The main trend right now + one actionable thing a creator should do this week. Ultra concise, for the creator in a hurry.]
 
-3. **Actionable insight:** One specific, concrete thing a creator in this niche could do THIS WEEK with this information. Not generic advice.
+---
+
+**📊 Full Analysis**
+
+**1. Main trend this week:**
+What specific topic or format is gaining traction across these sources right now? Be concrete, not generic.
+
+**2. What creators should know:**
+What is the audience engaging with? What angle or approach is working? Give specific examples from the content analyzed.
+
+**3. Actionable insight:**
+One specific, concrete thing a creator in this niche could do THIS WEEK with this information. Not generic advice.
 
 Write in the same language as the content. If the content is in Spanish, respond in Spanish. If in English, respond in English. Be specific and actionable. Avoid generic statements that would apply to any niche. If there is not enough data to detect a real trend, say so honestly.
 
