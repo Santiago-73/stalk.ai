@@ -123,6 +123,12 @@ export async function getChannelDetails(channelIds: string[]): Promise<YouTubeCh
 export async function resolveChannelUrl(url: string): Promise<YouTubeChannelData | null> {
   const cleaned = url.trim().replace(/\/$/, '')
 
+  // Bare channel ID (from search results)
+  if (/^UC[\w-]{22}$/.test(cleaned)) {
+    const details = await getChannelDetails([cleaned])
+    return details[0] ?? null
+  }
+
   // Direct channel ID: youtube.com/channel/UC...
   const channelIdMatch = cleaned.match(/\/channel\/(UC[\w-]+)/)
   if (channelIdMatch) {

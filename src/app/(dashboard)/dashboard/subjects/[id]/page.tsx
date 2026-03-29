@@ -4,12 +4,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Zap,
+    Youtube, MessageSquare, Zap, Flame,
     Twitch
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
+import ChannelSearch from '@/app/(dashboard)/_components/ChannelSearch'
+import ChannelList from '@/app/(dashboard)/_components/ChannelList'
+import ChannelVideos from '@/app/(dashboard)/_components/ChannelVideos'
 
 type SourceType = 'youtube' | 'reddit' | 'twitch'
 
@@ -54,6 +57,8 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
     const [toastOk, setToastOk] = useState(false)
     const [toastError, setToastError] = useState<string | null>(null)
     const [plan, setPlan] = useState<string>('free')
+
+    const [channelRefreshKey, setChannelRefreshKey] = useState(0)
 
     // Add source modal
     const [showModal, setShowModal] = useState(false)
@@ -345,6 +350,28 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* YouTube Channels */}
+            <div style={{ marginTop: 40 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Youtube size={18} color="#ff4444" /> YouTube Channels
+                </h2>
+                <ChannelSearch
+                    subjectId={id}
+                    onChannelAdded={() => setChannelRefreshKey(k => k + 1)}
+                />
+                <div style={{ marginTop: 20 }}>
+                    <ChannelList subjectId={id} refreshKey={channelRefreshKey} />
+                </div>
+            </div>
+
+            {/* Recent Videos */}
+            <div style={{ marginTop: 40 }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Flame size={18} color="#ff4444" /> Recent Videos
+                </h2>
+                <ChannelVideos subjectId={id} refreshKey={channelRefreshKey} />
             </div>
 
             {/* Add source modal */}
