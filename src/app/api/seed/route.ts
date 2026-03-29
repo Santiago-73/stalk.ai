@@ -115,18 +115,18 @@ export async function POST() {
     { topic: 'Thumbnail face reactions', source_platform: 'youtube', strength_score: 0.45, status: 'declining', detail: 'Engagement dropping. Oversaturated — consider alternative styles.', days_ago: 14 },
   ]
 
-  for (const t of trendSeeds) {
-    await supabase.from('trends').upsert({
-      user_id: user.id,
-      subject_id: subjectId,
-      topic: t.topic,
-      source_platform: t.source_platform,
-      strength_score: t.strength_score,
-      status: t.status,
-      detail: t.detail,
-      first_detected_at: new Date(now - t.days_ago * 86_400_000).toISOString(),
-    }, { onConflict: 'user_id,topic' })
-  }
+  // Delete existing seeded trends first so insert is idempotent
+  await supabase.from('trends').delete().eq('user_id', user.id).eq('subject_id', subjectId)
+  await supabase.from('trends').insert(trendSeeds.map(t => ({
+    user_id: user.id,
+    subject_id: subjectId,
+    topic: t.topic,
+    source_platform: t.source_platform,
+    strength_score: t.strength_score,
+    status: t.status,
+    detail: t.detail,
+    first_detected_at: new Date(now - t.days_ago * 86_400_000).toISOString(),
+  })))
 
   // ── Alerts ────────────────────────────────────────────────────────────
   const alertSeeds = [
@@ -136,16 +136,16 @@ export async function POST() {
     { type: 'competitor_change', title: 'MKBHD changed upload frequency', message: 'Went from 1/week to 3/week. Views per video holding steady.', hours_ago: 8, read: true },
   ]
 
-  for (const a of alertSeeds) {
-    await supabase.from('alerts').upsert({
-      user_id: user.id,
-      type: a.type,
-      title: a.title,
-      message: a.message,
-      created_at: new Date(now - a.hours_ago * 3_600_000).toISOString(),
-      read_at: a.read ? new Date().toISOString() : null,
-    }, { onConflict: 'user_id,title' })
-  }
+  // Delete existing seeded alerts and re-insert
+  await supabase.from('alerts').delete().eq('user_id', user.id)
+  await supabase.from('alerts').insert(alertSeeds.map(a => ({
+    user_id: user.id,
+    type: a.type,
+    title: a.title,
+    message: a.message,
+    created_at: new Date(now - a.hours_ago * 3_600_000).toISOString(),
+    read_at: a.read ? new Date().toISOString() : null,
+  })))
 
   return NextResponse.json({
     success: true,
