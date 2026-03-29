@@ -379,6 +379,12 @@ body::after {
     overflow-y: auto !important;
   }
 
+  /* Trends & Channels pages */
+  .trends-filter-pills { flex-wrap: wrap !important; gap: 8px !important; }
+  .channels-stats-row { grid-template-columns: 1fr !important; }
+  .channels-grid { grid-template-columns: 1fr !important; }
+  .top-videos-grid-row { grid-template-columns: 1fr !important; }
+
   /* Dashboard grids */
   .dash-actions-grid {
     grid-template-columns: 1fr !important;
