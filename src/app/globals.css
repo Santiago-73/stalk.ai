@@ -418,3 +418,12 @@ body::after {
     gap: 12px !important;
   }
 }
+
+/* Channel card hover */
+.channel-card {
+  transition: transform 0.15s, background 0.15s;
+}
+.channel-card:hover {
+  transform: translateY(-2px);
+  background: var(--bg-card-hover) !important;
+}

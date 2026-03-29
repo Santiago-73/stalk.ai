@@ -186,19 +186,7 @@ export default async function ChannelsPage() {
 
           return (
             <Link key={ch.id} href={`/dashboard/subjects/${ch.subject_id}`} style={{ textDecoration: 'none' }}>
-              <div className="card" style={{
-                padding: '20px', height: '100%',
-                transition: 'transform 0.15s, background 0.15s',
-              }}
-                onMouseEnter={(e: any) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.background = 'var(--bg-card-hover)'
-                }}
-                onMouseLeave={(e: any) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.background = ''
-                }}
-              >
+              <div className="card channel-card" style={{ padding: '20px', height: '100%' }}>
                 {/* Top row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                   <div style={{
