@@ -140,6 +140,7 @@ export async function POST() {
   await supabase.from('alerts').delete().eq('user_id', user.id)
   const { error: alertError, data: alertData } = await supabase.from('alerts').insert(alertSeeds.map(a => ({
     user_id: user.id,
+    subject_id: subjectId,
     type: a.type,
     title: a.title,
     message: a.message,
