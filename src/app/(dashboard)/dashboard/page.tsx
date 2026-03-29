@@ -69,7 +69,7 @@ export default async function DashboardPage() {
     { count: totalDigests },
     { data: trends },
     { data: channels, count: channelsCount },
-    { data: topVideos },
+    topVideosResult,
     { data: alerts },
     { data: emergingChannels },
   ] = await Promise.all([
@@ -94,8 +94,8 @@ export default async function DashboardPage() {
     // Channels count
     supabase.from('channels').select('id', { count: 'exact', head: false })
       .eq('user_id', userId),
-    // Top videos this week (by views, from last 7 days)
-    supabase.from('videos').select('*, channels!inner(name, avg_views_per_video)')
+    // Top videos this week — safe fetch without join
+    supabase.from('videos').select('id, title, published_at, views, channel_id, thumbnail_url')
       .eq('user_id', userId)
       .gte('published_at', new Date(Date.now() - 7 * 86400000).toISOString())
       .order('views', { ascending: false })
@@ -119,7 +119,7 @@ export default async function DashboardPage() {
   const isNewUser = (subjectsCount ?? 0) === 0
 
   const trendsList = trends ?? []
-  const videosList = topVideos ?? []
+  const videosList = topVideosResult?.data ?? []
   const alertsList = alerts ?? []
   const emergingList = emergingChannels ?? []
   const totalChannels = channelsCount ?? channels?.length ?? 0
