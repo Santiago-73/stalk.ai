@@ -185,7 +185,7 @@ export default async function ChannelsPage() {
           const subjectName = (ch.subjects as any)?.name ?? ''
 
           return (
-            <Link key={ch.id} href={`/dashboard/subjects/${ch.subject_id}`} style={{ textDecoration: 'none' }}>
+            <Link key={ch.id} href={`/dashboard/channels/${ch.id}`} style={{ textDecoration: 'none' }}>
               <div className="card channel-card" style={{ padding: '20px', height: '100%' }}>
                 {/* Top row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
