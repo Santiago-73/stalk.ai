@@ -81,6 +81,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Also save as a source so it appears in the subject's source list
+    await supabase.from('sources').upsert({
+      subject_id,
+      user_id: user.id,
+      type: 'youtube',
+      name: channelData.name,
+      url: `https://www.youtube.com/channel/${channelData.platform_channel_id}`,
+    }, { onConflict: 'subject_id,url' })
+
     // Save a daily snapshot
     const today = new Date().toISOString().split('T')[0]
     await supabase
