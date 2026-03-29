@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import {
   Plus, TrendingUp, Zap, ArrowRight, Layers, Sparkles,
-  BarChart3, Bell, BellRing, Eye, Flame, Image,
-  Users, ExternalLink, ChevronRight, Radio, Target
+  Bell, BellRing, Flame, Image,
+  Users, ChevronRight, Target
 } from 'lucide-react'
 import Link from 'next/link'
 import OnboardingModal from './OnboardingModal'
@@ -51,135 +51,93 @@ function formatViews(n: number) {
   return String(n)
 }
 
-/* ─── Mock data (will be replaced with Supabase queries) ──────────────── */
-const MOCK_TRENDS = [
-  {
-    id: '1', topic: 'Retro speedruns', source_platform: 'reddit',
-    strength_score: 0.87, status: 'emerging',
-    first_detected_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    detail: '12 posts in r/speedrun this week (3x normal). Only 2 YouTube videos.',
-  },
-  {
-    id: '2', topic: 'AI voice cloning tools', source_platform: 'youtube',
-    strength_score: 0.92, status: 'peak',
-    first_detected_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-    detail: '8 channels covered this topic. Average 2.4x their normal views.',
-  },
-  {
-    id: '3', topic: 'Cozy game aesthetics', source_platform: 'twitch',
-    strength_score: 0.65, status: 'emerging',
-    first_detected_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    detail: '3 streamers gained 40%+ followers this week with cozy content.',
-  },
-  {
-    id: '4', topic: 'Thumbnail face reactions', source_platform: 'youtube',
-    strength_score: 0.45, status: 'declining',
-    first_detected_at: new Date(Date.now() - 14 * 86400000).toISOString(),
-    detail: 'Engagement dropping. Oversaturated — consider alternative styles.',
-  },
-]
-
-const MOCK_TOP_VIDEOS = [
-  {
-    id: '1', title: 'I Played The New Update for 100 Hours...',
-    channel_name: 'GamerzPro', published_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    views: 312000, avg_channel_views: 46000,
-    gradient: 'linear-gradient(135deg, #1a1a2e, #16213e)',
-  },
-  {
-    id: '2', title: 'Why Everyone Is Wrong About This Meta',
-    channel_name: 'StrategyKing', published_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    views: 189000, avg_channel_views: 59000,
-    gradient: 'linear-gradient(135deg, #2d132c, #1a1a2e)',
-  },
-  {
-    id: '3', title: 'Beginner to Pro in 30 Days Challenge',
-    channel_name: 'NoobishPlays', published_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    views: 97000, avg_channel_views: 54000,
-    gradient: 'linear-gradient(135deg, #1a2a1a, #0a1a0a)',
-  },
-  {
-    id: '4', title: 'This Hidden Setting Changes Everything',
-    channel_name: 'TechTips', published_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-    views: 245000, avg_channel_views: 120000,
-    gradient: 'linear-gradient(135deg, #1a1a1a, #2a1a2a)',
-  },
-]
-
-const MOCK_EMERGING_CHANNELS = [
-  {
-    id: '1', name: 'NoobishPlays', platform: 'youtube',
-    subscribers: 34200, growth_rate_30d: 42,
-    avg_views: 54000, avatar_color: '#7c3aed',
-  },
-  {
-    id: '2', name: 'CozyGamerGirl', platform: 'twitch',
-    subscribers: 12800, growth_rate_30d: 67,
-    avg_views: 890, avatar_color: '#9146ff',
-  },
-  {
-    id: '3', name: 'RetroRunsDaily', platform: 'youtube',
-    subscribers: 8400, growth_rate_30d: 128,
-    avg_views: 23000, avatar_color: '#f59e0b',
-  },
-]
-
-const MOCK_ALERTS = [
-  {
-    id: '1', type: 'viral_video', title: 'GamerzPro video hit 6.8x average',
-    message: '"I Played The New Update for 100 Hours" — 312K views vs 46K avg',
-    created_at: new Date(Date.now() - 3600000).toISOString(), read_at: null,
-  },
-  {
-    id: '2', type: 'emerging_trend', title: '"Retro speedruns" detected on Reddit',
-    message: '3x normal activity in r/speedrun. Low YouTube competition.',
-    created_at: new Date(Date.now() - 7200000).toISOString(), read_at: null,
-  },
-  {
-    id: '3', type: 'new_channel', title: 'RetroRunsDaily growing +128% in 30d',
-    message: 'New channel in your niche with anomalous growth pattern.',
-    created_at: new Date(Date.now() - 14400000).toISOString(), read_at: new Date().toISOString(),
-  },
-  {
-    id: '4', type: 'competitor_change', title: 'StrategyKing changed upload frequency',
-    message: 'Went from 1/week to 3/week. Views per video holding steady.',
-    created_at: new Date(Date.now() - 28800000).toISOString(), read_at: new Date().toISOString(),
-  },
-]
-
 /* ═══════════════════════════════════════════════════════════════════════════
-   DASHBOARD PAGE
+   DASHBOARD PAGE — reads from real Supabase tables
    ═══════════════════════════════════════════════════════════════════════════ */
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id ?? ''
 
+  /* ── Core queries (tables that definitely exist) ───────────────────────── */
   const [
     { data: profile },
     { data: subjectsRaw, count: subjectsCount },
     { count: digestsThisWeek },
-    { count: totalDigests },
   ] = await Promise.all([
-    supabase.from('profiles').select('plan').eq('id', user?.id ?? '').single(),
+    supabase.from('profiles').select('plan').eq('id', userId).single(),
     supabase.from('subjects').select('id, name, description, created_at', { count: 'exact' })
-      .eq('user_id', user?.id ?? '').order('created_at', { ascending: false }).limit(6),
+      .eq('user_id', userId).order('created_at', { ascending: false }).limit(6),
     supabase.from('digests').select('*', { count: 'exact', head: true })
-      .eq('user_id', user?.id ?? '')
+      .eq('user_id', userId)
       .gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
-    supabase.from('digests').select('*', { count: 'exact', head: true })
-      .eq('user_id', user?.id ?? ''),
   ])
+
+  /* ── New table queries (safe — won't crash if table missing) ───────────── */
+  let trendsList: any[] = []
+  let videosList: any[] = []
+  let alertsList: any[] = []
+  let emergingList: any[] = []
+  let totalChannels = 0
+
+  try {
+    const [trendsRes, channelCountRes, videosRes, alertsRes, emergingRes] = await Promise.all([
+      supabase.from('trends').select('*')
+        .eq('user_id', userId).neq('status', 'dead')
+        .order('strength_score', { ascending: false }).limit(6),
+      supabase.from('channels').select('*', { count: 'exact', head: true })
+        .eq('user_id', userId),
+      supabase.from('videos').select('id, title, published_at, views, likes, thumbnail_url, channel_id')
+        .eq('user_id', userId)
+        .gte('published_at', new Date(Date.now() - 7 * 86400000).toISOString())
+        .order('views', { ascending: false }).limit(5),
+      supabase.from('alerts').select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false }).limit(6),
+      supabase.from('channels').select('*')
+        .eq('user_id', userId)
+        .gt('growth_rate_30d', 10)
+        .order('growth_rate_30d', { ascending: false }).limit(4),
+    ])
+
+    trendsList = trendsRes.data ?? []
+    totalChannels = channelCountRes.count ?? 0
+    videosList = videosRes.data ?? []
+    alertsList = alertsRes.data ?? []
+    emergingList = emergingRes.data ?? []
+
+    // Enrich videos with channel names (separate query, no join)
+    if (videosList.length > 0) {
+      const channelIdsForVideos = [...new Set(videosList.map((v: any) => v.channel_id).filter(Boolean))]
+      if (channelIdsForVideos.length > 0) {
+        const { data: channelsForVideos } = await supabase
+          .from('channels').select('id, name, avg_views_per_video')
+          .in('id', channelIdsForVideos)
+        const channelMap = new Map((channelsForVideos ?? []).map((c: any) => [c.id, c]))
+        for (const v of videosList) {
+          const ch = channelMap.get(v.channel_id)
+          v.channel_name = ch?.name ?? 'Unknown'
+          v.avg_channel_views = ch?.avg_views_per_video ?? v.views
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Dashboard: error fetching new tables (trends/channels/videos/alerts):', e)
+  }
 
   const plan = profile?.plan || 'free'
   const isPro = plan === 'pro' || plan === 'ultra'
   const username = user?.email?.split('@')[0] ?? ''
   const isNewUser = (subjectsCount ?? 0) === 0
+  const unreadAlerts = alertsList.filter((a: any) => !a.read_at).length
 
-  // TODO: Replace mock data with real Supabase queries when tables exist
-  const trends = MOCK_TRENDS
-  const topVideos = MOCK_TOP_VIDEOS
-  const emergingChannels = MOCK_EMERGING_CHANNELS
-  const alerts = MOCK_ALERTS
+  const thumbGradients = [
+    'linear-gradient(135deg, #1a1a2e, #16213e)',
+    'linear-gradient(135deg, #2d132c, #1a1a2e)',
+    'linear-gradient(135deg, #1a2a1a, #0a1a0a)',
+    'linear-gradient(135deg, #1a1a1a, #2a1a2a)',
+    'linear-gradient(135deg, #0a1a2a, #1a0a2a)',
+  ]
 
   return (
     <div>
@@ -198,7 +156,7 @@ export default async function DashboardPage() {
           <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
             {isNewUser
               ? "Let's get you set up — create your first subject below."
-              : `Tracking ${subjectsCount} subject${(subjectsCount ?? 0) !== 1 ? 's' : ''}. ${alerts.filter(a => !a.read_at).length} unread alerts.`
+              : `Tracking ${subjectsCount} subject${(subjectsCount ?? 0) !== 1 ? 's' : ''}${totalChannels > 0 ? ` · ${totalChannels} channel${totalChannels !== 1 ? 's' : ''}` : ''}${unreadAlerts > 0 ? ` · ${unreadAlerts} unread alert${unreadAlerts !== 1 ? 's' : ''}` : ''}`
             }
           </p>
         </div>
@@ -259,19 +217,26 @@ export default async function DashboardPage() {
                 sub: `${digestsThisWeek ?? 0} digests this week`, href: '/dashboard/subjects'
               },
               {
-                label: 'Active Trends', value: trends.filter(t => t.status !== 'declining').length,
+                label: 'Active Trends', value: trendsList.filter((t: any) => t.status !== 'declining').length,
                 icon: <TrendingUp size={18} />, color: '#10b981',
-                sub: `${trends.filter(t => t.status === 'emerging').length} emerging`, href: '/dashboard/trends'
+                sub: trendsList.length > 0
+                  ? `${trendsList.filter((t: any) => t.status === 'emerging').length} emerging`
+                  : 'Add channels to detect',
+                href: '#trends'
               },
               {
-                label: 'Channels Tracked', value: 24,
+                label: 'Channels Tracked', value: totalChannels,
                 icon: <Users size={18} />, color: '#f59e0b',
-                sub: `${emergingChannels.length} growing fast`, href: '/dashboard/channels'
+                sub: emergingList.length > 0
+                  ? `${emergingList.length} growing fast`
+                  : 'Sync a YouTube channel',
+                href: '#channels'
               },
               {
-                label: 'Alerts', value: alerts.filter(a => !a.read_at).length,
+                label: 'Alerts', value: unreadAlerts,
                 icon: <BellRing size={18} />, color: '#ff5c5c',
-                sub: `${alerts.length} total`, href: '/dashboard/alerts'
+                sub: `${alertsList.length} total`,
+                href: '#alerts'
               },
             ].map((kpi, i) => (
               <Link key={i} href={kpi.href ?? '#'} style={{ textDecoration: 'none' }}>
@@ -311,7 +276,7 @@ export default async function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
               {/* ── Trending Topics ────────────────────────────────────────── */}
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div id="trends" className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
                   padding: '16px 20px', borderBottom: '1px solid var(--border)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -320,60 +285,55 @@ export default async function DashboardPage() {
                     <TrendingUp size={16} color="var(--accent-bright)" />
                     <span style={{ fontWeight: 700, fontSize: 14 }}>Active Trends</span>
                   </div>
-                  <Link href="/dashboard/trends" className="mono" style={{
-                    fontSize: 11, color: 'var(--accent-bright)', textDecoration: 'none',
-                    display: 'flex', alignItems: 'center', gap: 4
-                  }}>
-                    View all <ChevronRight size={12} />
-                  </Link>
                 </div>
-                <div>
-                  {trends.map((trend, i) => {
-                    const sc = statusColor[trend.status] ?? statusColor.emerging
-                    const perfMultiplier = (trend.strength_score * 10).toFixed(1)
-                    return (
-                      <div key={trend.id} className="hover-bg" style={{
-                        padding: '14px 20px',
-                        borderBottom: i < trends.length - 1 ? '1px solid var(--border)' : 'none',
-                        transition: 'background 0.15s',
-                        cursor: 'pointer',
-                      }}>
-                        <div style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          marginBottom: 6
+                {trendsList.length === 0 ? (
+                  <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                    No trends detected yet. Add channels and generate a digest to start tracking.
+                  </div>
+                ) : (
+                  <div>
+                    {trendsList.map((trend: any, i: number) => {
+                      const sc = statusColor[trend.status] ?? statusColor.emerging
+                      const perfMultiplier = (trend.strength_score * 10).toFixed(1)
+                      return (
+                        <div key={trend.id} className="hover-bg" style={{
+                          padding: '14px 20px',
+                          borderBottom: i < trendsList.length - 1 ? '1px solid var(--border)' : 'none',
+                          transition: 'background 0.15s', cursor: 'pointer',
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontWeight: 600, fontSize: 14 }}>{trend.topic}</span>
-                            <div style={{
-                              width: 7, height: 7, borderRadius: '50%',
-                              background: platformColor[trend.source_platform] ?? '#7c3aed',
-                              flexShrink: 0
-                            }}
-                              title={platformLabel[trend.source_platform]}
-                            />
-                          </div>
-                          <span className="mono" style={{
-                            fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
-                            background: sc.bg, color: sc.text,
-                            textTransform: 'uppercase', letterSpacing: '0.04em'
+                          <div style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            marginBottom: 6
                           }}>
-                            {trend.status}
-                          </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontWeight: 600, fontSize: 14 }}>{trend.topic}</span>
+                              <div style={{
+                                width: 7, height: 7, borderRadius: '50%',
+                                background: platformColor[trend.source_platform] ?? '#7c3aed',
+                                flexShrink: 0
+                              }}
+                                title={platformLabel[trend.source_platform]}
+                              />
+                            </div>
+                            <span className="mono" style={{
+                              fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
+                              background: sc.bg, color: sc.text,
+                              textTransform: 'uppercase', letterSpacing: '0.04em'
+                            }}>
+                              {trend.status}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                            {trend.detail}
+                          </div>
+                          <div className="mono" style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 6 }}>
+                            Detected {timeAgo(trend.first_detected_at)} · Strength {perfMultiplier}/10
+                          </div>
                         </div>
-                        <div style={{
-                          fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5
-                        }}>
-                          {trend.detail}
-                        </div>
-                        <div className="mono" style={{
-                          fontSize: 10, color: 'var(--text-muted)', marginTop: 6
-                        }}>
-                          Detected {timeAgo(trend.first_detected_at)} · Strength {perfMultiplier}/10
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* ── Top Videos ─────────────────────────────────────────────── */}
@@ -386,70 +346,69 @@ export default async function DashboardPage() {
                     <Flame size={16} color="#ff4444" />
                     <span style={{ fontWeight: 700, fontSize: 14 }}>Top Videos This Week</span>
                   </div>
-                  <Link href="/dashboard/channels" className="mono" style={{
-                    fontSize: 11, color: 'var(--accent-bright)', textDecoration: 'none',
-                    display: 'flex', alignItems: 'center', gap: 4
-                  }}>
-                    All channels <ChevronRight size={12} />
-                  </Link>
                 </div>
-                <div>
-                  {topVideos.map((video, i) => {
-                    const multiplier = video.views / video.avg_channel_views
-                    const isHot = multiplier >= 3
-                    const perfColor = isHot ? '#ff7c7c' : multiplier >= 2 ? '#10b981' : '#f59e0b'
-                    const perfBg = isHot
-                      ? 'rgba(255,92,92,0.12)'
-                      : multiplier >= 2 ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)'
-                    return (
-                      <div key={video.id} className="hover-bg" style={{
-                        padding: '12px 20px',
-                        borderBottom: i < topVideos.length - 1 ? '1px solid var(--border)' : 'none',
-                        display: 'grid', gridTemplateColumns: '80px 1fr auto auto',
-                        gap: 14, alignItems: 'center',
-                        transition: 'background 0.15s', cursor: 'pointer',
-                      }}>
-                        {/* Thumbnail placeholder */}
-                        <div style={{
-                          width: 80, height: 46, borderRadius: 8,
-                          background: video.gradient,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 14, color: 'rgba(255,255,255,0.3)', flexShrink: 0
+                {videosList.length === 0 ? (
+                  <div style={{ padding: '32px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                    No videos tracked yet. Sync a YouTube channel to see top performers.
+                  </div>
+                ) : (
+                  <div>
+                    {videosList.map((video: any, i: number) => {
+                      const avgViews = video.avg_channel_views || video.views
+                      const multiplier = video.views / avgViews
+                      const isHot = multiplier >= 3
+                      const perfColor = isHot ? '#ff7c7c' : multiplier >= 2 ? '#10b981' : '#f59e0b'
+                      const perfBg = isHot
+                        ? 'rgba(255,92,92,0.12)'
+                        : multiplier >= 2 ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)'
+                      return (
+                        <div key={video.id} className="hover-bg" style={{
+                          padding: '12px 20px',
+                          borderBottom: i < videosList.length - 1 ? '1px solid var(--border)' : 'none',
+                          display: 'grid', gridTemplateColumns: '80px 1fr auto auto',
+                          gap: 14, alignItems: 'center',
+                          transition: 'background 0.15s', cursor: 'pointer',
                         }}>
-                          ▶
-                        </div>
-                        {/* Info */}
-                        <div style={{ minWidth: 0 }}>
+                          {/* Thumbnail */}
                           <div style={{
-                            fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
-                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                            width: 80, height: 46, borderRadius: 8,
+                            background: video.thumbnail_url
+                              ? `url(${video.thumbnail_url}) center/cover`
+                              : thumbGradients[i % thumbGradients.length],
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 14, color: 'rgba(255,255,255,0.3)', flexShrink: 0
                           }}>
-                            {video.title}
+                            {!video.thumbnail_url && '▶'}
                           </div>
-                          <div className="mono" style={{
-                            fontSize: 10, color: 'var(--text-muted)', marginTop: 2
+                          {/* Info */}
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{
+                              fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                            }}>
+                              {video.title}
+                            </div>
+                            <div className="mono" style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                              {video.channel_name ?? 'Channel'} · {timeAgo(video.published_at)}
+                            </div>
+                          </div>
+                          {/* Views */}
+                          <span className="mono" style={{ fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            {formatViews(video.views)}
+                          </span>
+                          {/* Performance badge */}
+                          <span className="mono" style={{
+                            fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap',
+                            padding: '3px 8px', borderRadius: 100,
+                            background: perfBg, color: perfColor
                           }}>
-                            {video.channel_name} · {timeAgo(video.published_at)}
-                          </div>
+                            {isHot ? '🔥 ' : '↑ '}{multiplier.toFixed(1)}x avg
+                          </span>
                         </div>
-                        {/* Views */}
-                        <span className="mono" style={{
-                          fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap'
-                        }}>
-                          {formatViews(video.views)}
-                        </span>
-                        {/* Performance badge */}
-                        <span className="mono" style={{
-                          fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap',
-                          padding: '3px 8px', borderRadius: 100,
-                          background: perfBg, color: perfColor
-                        }}>
-                          {isHot ? '🔥 ' : '↑ '}{multiplier.toFixed(1)}x avg
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* ── Your Subjects ──────────────────────────────────────────── */}
@@ -470,10 +429,9 @@ export default async function DashboardPage() {
                   </Link>
                 </div>
                 <div style={{
-                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                  gap: 0
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 0
                 }}>
-                  {(subjectsRaw ?? []).slice(0, 6).map((subject, i) => (
+                  {(subjectsRaw ?? []).slice(0, 6).map((subject) => (
                     <Link key={subject.id} href={`/dashboard/subjects/${subject.id}`} style={{
                       textDecoration: 'none',
                       borderRight: '1px solid var(--border)',
@@ -484,8 +442,7 @@ export default async function DashboardPage() {
                         height: '100%'
                       }}>
                         <div style={{
-                          fontWeight: 600, fontSize: 14, color: 'var(--text-primary)',
-                          marginBottom: 4
+                          fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4
                         }}>
                           {subject.name}
                         </div>
@@ -509,7 +466,7 @@ export default async function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
               {/* ── Alerts Feed ────────────────────────────────────────────── */}
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div id="alerts" className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
                   padding: '16px 18px', borderBottom: '1px solid var(--border)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -517,62 +474,62 @@ export default async function DashboardPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Bell size={16} color="#ff5c5c" />
                     <span style={{ fontWeight: 700, fontSize: 14 }}>Alerts</span>
-                    {alerts.filter(a => !a.read_at).length > 0 && (
+                    {unreadAlerts > 0 && (
                       <span style={{
                         fontSize: 10, fontWeight: 700, background: '#ff5c5c', color: 'white',
                         borderRadius: 100, padding: '1px 6px', minWidth: 18, textAlign: 'center'
                       }}>
-                        {alerts.filter(a => !a.read_at).length}
+                        {unreadAlerts}
                       </span>
                     )}
                   </div>
                 </div>
-                <div>
-                  {alerts.map((alert, i) => (
-                    <div key={alert.id} className="hover-bg" style={{
-                      padding: '12px 18px',
-                      borderBottom: i < alerts.length - 1 ? '1px solid var(--border)' : 'none',
-                      opacity: alert.read_at ? 0.6 : 1,
-                      transition: 'background 0.15s', cursor: 'pointer',
-                    }}>
-                      <div style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 10
+                {alertsList.length === 0 ? (
+                  <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                    No alerts yet. They will appear when something noteworthy happens.
+                  </div>
+                ) : (
+                  <div>
+                    {alertsList.map((alert: any, i: number) => (
+                      <div key={alert.id} className="hover-bg" style={{
+                        padding: '12px 18px',
+                        borderBottom: i < alertsList.length - 1 ? '1px solid var(--border)' : 'none',
+                        opacity: alert.read_at ? 0.6 : 1,
+                        transition: 'background 0.15s', cursor: 'pointer',
                       }}>
-                        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
-                          {alertTypeIcon[alert.type] ?? '📋'}
-                        </span>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{
-                            fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
-                            marginBottom: 3, lineHeight: 1.3
-                          }}>
-                            {alert.title}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>
+                            {alertTypeIcon[alert.type] ?? '📋'}
+                          </span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{
+                              fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
+                              marginBottom: 3, lineHeight: 1.3
+                            }}>
+                              {alert.title}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                              {alert.message}
+                            </div>
+                            <div className="mono" style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 4 }}>
+                              {timeAgo(alert.created_at)}
+                            </div>
                           </div>
-                          <div style={{
-                            fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.4
-                          }}>
-                            {alert.message}
-                          </div>
-                          <div className="mono" style={{
-                            fontSize: 9, color: 'var(--text-muted)', marginTop: 4
-                          }}>
-                            {timeAgo(alert.created_at)}
-                          </div>
+                          {!alert.read_at && (
+                            <div style={{
+                              width: 7, height: 7, borderRadius: '50%',
+                              background: '#7c3aed', flexShrink: 0, marginTop: 5
+                            }} />
+                          )}
                         </div>
-                        {!alert.read_at && (
-                          <div style={{
-                            width: 7, height: 7, borderRadius: '50%',
-                            background: '#7c3aed', flexShrink: 0, marginTop: 5
-                          }} />
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ── Emerging Channels ──────────────────────────────────────── */}
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div id="channels" className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{
                   padding: '16px 18px', borderBottom: '1px solid var(--border)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
@@ -581,53 +538,53 @@ export default async function DashboardPage() {
                     <Target size={16} color="#10b981" />
                     <span style={{ fontWeight: 700, fontSize: 14 }}>Rising Channels</span>
                   </div>
-                  <Link href="/dashboard/channels" className="mono" style={{
-                    fontSize: 11, color: 'var(--accent-bright)', textDecoration: 'none',
-                    display: 'flex', alignItems: 'center', gap: 4
-                  }}>
-                    All <ChevronRight size={12} />
-                  </Link>
                 </div>
-                <div>
-                  {emergingChannels.map((channel, i) => (
-                    <div key={channel.id} className="hover-bg" style={{
-                      padding: '14px 18px',
-                      borderBottom: i < emergingChannels.length - 1 ? '1px solid var(--border)' : 'none',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      transition: 'background 0.15s', cursor: 'pointer',
-                    }}>
-                      {/* Avatar placeholder */}
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        background: `${channel.avatar_color}22`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: channel.avatar_color, fontSize: 14, fontWeight: 800
+                {emergingList.length === 0 ? (
+                  <div style={{ padding: '32px 18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                    No rising channels detected yet.
+                  </div>
+                ) : (
+                  <div>
+                    {emergingList.map((channel: any, i: number) => (
+                      <div key={channel.id} className="hover-bg" style={{
+                        padding: '14px 18px',
+                        borderBottom: i < emergingList.length - 1 ? '1px solid var(--border)' : 'none',
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        transition: 'background 0.15s', cursor: 'pointer',
                       }}>
-                        {channel.name.charAt(0)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Avatar */}
                         <div style={{
-                          display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2
+                          width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                          background: channel.avatar_url
+                            ? `url(${channel.avatar_url}) center/cover`
+                            : `${platformColor[channel.platform] ?? '#7c3aed'}22`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: platformColor[channel.platform] ?? '#7c3aed',
+                          fontSize: 14, fontWeight: 800
                         }}>
-                          <span style={{ fontSize: 13, fontWeight: 600 }}>{channel.name}</span>
-                          <div style={{
-                            width: 6, height: 6, borderRadius: '50%',
-                            background: platformColor[channel.platform] ?? '#7c3aed',
-                            flexShrink: 0
-                          }} />
+                          {!channel.avatar_url && channel.name.charAt(0)}
                         </div>
-                        <div className="mono" style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                          {formatViews(channel.subscribers)} subs · {formatViews(channel.avg_views)} avg
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600 }}>{channel.name}</span>
+                            <div style={{
+                              width: 6, height: 6, borderRadius: '50%',
+                              background: platformColor[channel.platform] ?? '#7c3aed', flexShrink: 0
+                            }} />
+                          </div>
+                          <div className="mono" style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                            {formatViews(channel.subscribers ?? 0)} subs · {formatViews(channel.avg_views_per_video ?? 0)} avg
+                          </div>
                         </div>
+                        <span className="mono" style={{
+                          fontSize: 11, fontWeight: 700, color: '#10b981', whiteSpace: 'nowrap'
+                        }}>
+                          +{channel.growth_rate_30d}%
+                        </span>
                       </div>
-                      <span className="mono" style={{
-                        fontSize: 11, fontWeight: 700, color: '#10b981', whiteSpace: 'nowrap'
-                      }}>
-                        +{channel.growth_rate_30d}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* ── Thumbnail Insights teaser ──────────────────────────────── */}
@@ -645,12 +602,12 @@ export default async function DashboardPage() {
                 }}>
                   See which thumbnail styles drive the most clicks in your niche — colors, faces, text, composition.
                 </p>
-                <Link href="/dashboard/thumbnails" className="mono" style={{
-                  fontSize: 11, color: 'var(--accent-bright)', textDecoration: 'none',
+                <span className="mono" style={{
+                  fontSize: 11, color: 'var(--accent-bright)',
                   display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600
                 }}>
-                  Explore thumbnails <ArrowRight size={12} />
-                </Link>
+                  Coming soon <ArrowRight size={12} />
+                </span>
               </div>
             </div>
           </div>
