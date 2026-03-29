@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { use } from 'react'
 import {
     Plus, Loader2, Trash2, RefreshCw, CheckCircle, ArrowLeft,
-    Youtube, MessageSquare, Zap, Flame,
+    Youtube, MessageSquare, Zap, Flame, ChevronDown,
     Twitch
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -59,6 +59,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
     const [plan, setPlan] = useState<string>('free')
 
     const [channelRefreshKey, setChannelRefreshKey] = useState(0)
+    const [digestsOpen, setDigestsOpen] = useState(false)
 
     // Add source modal
     const [showModal, setShowModal] = useState(false)
@@ -228,128 +229,41 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                 </div>
             </div>
 
-            <div className="subject-layout-grid" style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: 28, alignItems: 'start' }}>
-                {/* Sources panel */}
-                <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sourceLimitReached ? 8 : 16 }}>
-                        <h2 style={{ fontSize: 16, fontWeight: 700 }}>
-                            Sources ({sources.length}/{plan === 'ultra' ? '∞' : maxSourcesPerSubject})
-                        </h2>
-                        <button
-                            className="btn-secondary"
-                            onClick={() => !sourceLimitReached && setShowModal(true)}
-                            disabled={sourceLimitReached}
-                            style={{ padding: '6px 12px', fontSize: 12, opacity: sourceLimitReached ? 0.4 : 1, cursor: sourceLimitReached ? 'not-allowed' : 'pointer' }}
-                        >
-                            <Plus size={13} /> Add
-                        </button>
+            {/* Digests — collapsible */}
+            <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 8 }}>
+                <button
+                    onClick={() => setDigestsOpen(o => !o)}
+                    style={{
+                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--text-primary)', fontFamily: 'inherit',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Zap size={16} color="var(--accent-bright)" />
+                        <span style={{ fontSize: 15, fontWeight: 700 }}>Digests ({digests.length})</span>
                     </div>
-                    {sourceLimitReached && (
-                        <div style={{
-                            marginBottom: 16, padding: '10px 14px', borderRadius: 10,
-                            background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.25)',
-                            fontSize: 12, lineHeight: 1.5
-                        }}>
-                            <span style={{ color: 'var(--text-secondary)' }}>
-                                {plan === 'free'
-                                    ? 'Free plan limit reached (3 sources per subject).'
-                                    : `Pro plan limit reached (15 sources per subject).`}
-                            </span>
-                            {' '}
-                            <a href="/#pricing" style={{ color: 'var(--accent-bright)', fontWeight: 600, textDecoration: 'none' }}>
-                                {plan === 'free' ? 'Upgrade to Pro →' : 'Upgrade to Ultra →'}
-                            </a>
-                        </div>
-                    )}
+                    <ChevronDown size={16} color="var(--text-muted)" style={{
+                        transform: digestsOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s'
+                    }} />
+                </button>
 
-                    {sources.length === 0 ? (
-                        <div style={{
-                            textAlign: 'center', padding: '40px 20px',
-                            background: 'var(--bg-card)', border: '1px dashed var(--border-bright)', borderRadius: 12
-                        }}>
-                            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16 }}>
-                                Add social media links for {subject.name}
+                {digestsOpen && (
+                    <div style={{ padding: '0 20px 20px' }}>
+                        {digests.length === 0 ? (
+                            <p style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>
+                                Hit &quot;Generate digest&quot; to get your first unified summary.
                             </p>
-                            <button className="btn-primary" onClick={() => setShowModal(true)} style={{ fontSize: 13 }}>
-                                <Plus size={13} /> Add first source
-                            </button>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {sources.map(source => {
-                                const config = typeConfig[source.type] ?? typeConfig.youtube
-                                return (
-                                    <div key={source.id} className="card" style={{
-                                        padding: '12px 16px', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'space-between'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                                            <div style={{
-                                                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                                                background: `${config.color}22`,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: config.color
-                                            }}>
-                                                {config.icon}
-                                            </div>
-                                            <div style={{ minWidth: 0 }}>
-                                                <div style={{ fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                    {source.name}
-                                                </div>
-                                                <div style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                    {config.label}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => removeSource(source.id)}
-                                            style={{
-                                                background: 'none', border: 'none', cursor: 'pointer',
-                                                color: 'var(--text-muted)', display: 'flex', padding: 6, borderRadius: 6, flexShrink: 0
-                                            }}
-                                            onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* Digests panel */}
-                <div>
-                    <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>
-                        Digests ({digests.length})
-                    </h2>
-
-                    {digests.length === 0 ? (
-                        <div style={{
-                            textAlign: 'center', padding: '60px 40px',
-                            background: 'var(--bg-card)', border: '1px dashed var(--border-bright)', borderRadius: 12
-                        }}>
-                            <div style={{
-                                width: 56, height: 56, borderRadius: 14, margin: '0 auto 16px',
-                                background: 'rgba(124,58,237,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}>
-                                <Zap size={26} color="var(--accent-bright)" />
+                        ) : (
+                            <div className="subject-digests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                                {digests.map(digest => (
+                                    <DigestCard key={digest.id} digest={digest} userPlan={plan} />
+                                ))}
                             </div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-                                {sources.length === 0
-                                    ? 'Add sources first, then generate a digest.'
-                                    : 'Hit "Generate digest" to get your first unified summary.'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="subject-digests-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                            {digests.map(digest => (
-                                <DigestCard key={digest.id} digest={digest} userPlan={plan} />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* YouTube Channels */}
