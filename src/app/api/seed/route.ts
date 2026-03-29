@@ -138,17 +138,18 @@ export async function POST() {
 
   // Delete existing seeded alerts and re-insert
   await supabase.from('alerts').delete().eq('user_id', user.id)
-  await supabase.from('alerts').insert(alertSeeds.map(a => ({
+  const { error: alertError, data: alertData } = await supabase.from('alerts').insert(alertSeeds.map(a => ({
     user_id: user.id,
     type: a.type,
     title: a.title,
     message: a.message,
-    created_at: new Date(now - a.hours_ago * 3_600_000).toISOString(),
     read_at: a.read ? new Date().toISOString() : null,
-  })))
+  }))).select()
 
   return NextResponse.json({
     success: true,
+    alertError: alertError?.message ?? null,
+    alertsInserted: alertData?.length ?? 0,
     seeded: {
       channels: Object.keys(channelIds).length,
       videos: videoSeeds.length,
