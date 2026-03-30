@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { TrendingUp } from 'lucide-react'
 import TrendsFilter from './TrendsFilter'
+import DetectTrendsButton from '../../_components/DetectTrendsButton'
 
 export default async function TrendsPage() {
   const supabase = await createClient()
@@ -43,7 +44,7 @@ export default async function TrendsPage() {
           </p>
         </div>
 
-        {/* Status badges */}
+        {/* Status badges + detect button */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           {badges.map(b => (
             <span key={b.label} className="mono" style={{
@@ -53,6 +54,7 @@ export default async function TrendsPage() {
               {b.count} {b.label}
             </span>
           ))}
+          <DetectTrendsButton subjectId={null} />
         </div>
       </div>
 

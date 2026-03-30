@@ -13,6 +13,7 @@ import DigestCard from '@/app/(dashboard)/dashboard/digests/DigestCard'
 import ChannelSearch from '@/app/(dashboard)/_components/ChannelSearch'
 import ChannelList from '@/app/(dashboard)/_components/ChannelList'
 import ChannelVideos from '@/app/(dashboard)/_components/ChannelVideos'
+import DetectTrendsButton from '@/app/(dashboard)/_components/DetectTrendsButton'
 
 type SourceType = 'youtube' | 'reddit' | 'twitch'
 
@@ -215,17 +216,20 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                             )}
                         </div>
                     </div>
-                    <button
-                        className="btn-primary"
-                        onClick={generateDigest}
-                        disabled={generating || sources.length === 0}
-                        style={{ opacity: (generating || sources.length === 0) ? 0.6 : 1 }}
-                    >
-                        {generating
-                            ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating...</>
-                            : <><RefreshCw size={15} /> Generate digest</>
-                        }
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <DetectTrendsButton subjectId={id} />
+                        <button
+                            className="btn-primary"
+                            onClick={generateDigest}
+                            disabled={generating || sources.length === 0}
+                            style={{ opacity: (generating || sources.length === 0) ? 0.6 : 1 }}
+                        >
+                            {generating
+                                ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating...</>
+                                : <><RefreshCw size={15} /> Generate digest</>
+                            }
+                        </button>
+                    </div>
                 </div>
             </div>
 
