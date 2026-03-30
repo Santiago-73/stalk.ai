@@ -1,12 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import {
-  Plus, TrendingUp, Zap, ArrowRight, Layers, Sparkles,
+  Plus, TrendingUp, Zap, ArrowRight, Layers,
   Bell, BellRing, Flame, Image,
   Users, ChevronRight, Target
 } from 'lucide-react'
 import Link from 'next/link'
-import OnboardingModal from './OnboardingModal'
-import SeedExample from './SeedExample'
+import OnboardingFlow from '../_components/OnboardingFlow'
 
 /* ─── Color maps ──────────────────────────────────────────────────────────── */
 const platformColor: Record<string, string> = {
@@ -128,7 +127,6 @@ export default async function DashboardPage() {
   const plan = profile?.plan || 'free'
   const isPro = plan === 'pro' || plan === 'ultra'
   const username = user?.email?.split('@')[0] ?? ''
-  const isNewUser = (subjectsCount ?? 0) === 0
   const unreadAlerts = alertsList.filter((a: any) => !a.read_at).length
 
   const thumbGradients = [
@@ -139,10 +137,12 @@ export default async function DashboardPage() {
     'linear-gradient(135deg, #0a1a2a, #1a0a2a)',
   ]
 
+  if ((subjectsCount ?? 0) === 0) {
+    return <OnboardingFlow userId={userId} />
+  }
+
   return (
     <div>
-      <OnboardingModal isNewUser={isNewUser} />
-      <SeedExample shouldSeed={isNewUser} />
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div style={{
@@ -154,58 +154,26 @@ export default async function DashboardPage() {
             Hey, {username} 👋
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-            {isNewUser
-              ? "Let's get you set up — create your first subject below."
-              : `Tracking ${subjectsCount} subject${(subjectsCount ?? 0) !== 1 ? 's' : ''}${totalChannels > 0 ? ` · ${totalChannels} channel${totalChannels !== 1 ? 's' : ''}` : ''}${unreadAlerts > 0 ? ` · ${unreadAlerts} unread alert${unreadAlerts !== 1 ? 's' : ''}` : ''}`
-            }
+            {`Tracking ${subjectsCount} subject${(subjectsCount ?? 0) !== 1 ? 's' : ''}${totalChannels > 0 ? ` · ${totalChannels} channel${totalChannels !== 1 ? 's' : ''}` : ''}${unreadAlerts > 0 ? ` · ${unreadAlerts} unread alert${unreadAlerts !== 1 ? 's' : ''}` : ''}`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {!isNewUser && (
-            <span className="mono" style={{
-              fontSize: 10, letterSpacing: '0.08em', fontWeight: 700,
-              background: 'rgba(124,58,237,0.12)', color: 'var(--accent-bright)',
-              padding: '5px 12px', borderRadius: 100,
-              border: '1px solid rgba(124,58,237,0.2)',
-              textTransform: 'uppercase'
-            }}>
-              {plan}
-            </span>
-          )}
+          <span className="mono" style={{
+            fontSize: 10, letterSpacing: '0.08em', fontWeight: 700,
+            background: 'rgba(124,58,237,0.12)', color: 'var(--accent-bright)',
+            padding: '5px 12px', borderRadius: 100,
+            border: '1px solid rgba(124,58,237,0.2)',
+            textTransform: 'uppercase'
+          }}>
+            {plan}
+          </span>
           <Link href="/dashboard/subjects" className="btn-primary" style={{ padding: '9px 18px', fontSize: 13 }}>
             <Plus size={14} /> New subject
           </Link>
         </div>
       </div>
 
-      {/* ── New user: empty state ───────────────────────────────────────── */}
-      {isNewUser ? (
-        <div style={{
-          textAlign: 'center', padding: '64px 40px',
-          background: 'var(--bg-card)', border: '1px dashed var(--border-bright)',
-          borderRadius: 16
-        }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: 20, margin: '0 auto 24px',
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.2), rgba(232,121,249,0.15))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <Sparkles size={32} color="var(--accent-bright)" />
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Create your first subject</h2>
-          <p style={{
-            color: 'var(--text-secondary)', maxWidth: 440, margin: '0 auto 28px',
-            lineHeight: 1.7, fontSize: 14
-          }}>
-            A subject is a niche you want to track — like &quot;Gaming&quot;, &quot;Fitness&quot; or &quot;AI Tools&quot;.
-            Add YouTube channels, subreddits and Twitch streams as sources, and get AI-powered trend digests every day.
-          </p>
-          <Link href="/dashboard/subjects" className="btn-primary" style={{ fontSize: 15, padding: '12px 28px' }}>
-            <Plus size={16} /> Create subject
-          </Link>
-        </div>
-      ) : (
-        <>
+      <>
           {/* ── KPI Cards ───────────────────────────────────────────────── */}
           <div className="dash-kpi-grid" style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28
@@ -640,8 +608,7 @@ export default async function DashboardPage() {
               </Link>
             </div>
           )}
-        </>
-      )}
+      </>
     </div>
   )
 }
