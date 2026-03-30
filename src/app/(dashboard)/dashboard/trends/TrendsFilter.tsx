@@ -12,6 +12,7 @@ interface Trend {
   detail: string
   strength_score: number
   first_detected_at: string
+  subject_id: string
   subjects: { name: string } | null
 }
 
@@ -47,6 +48,18 @@ export default function TrendsFilter({ trends }: Props) {
   const [filter, setFilter] = useState<Filter>('all')
 
   const filtered = filter === 'all' ? trends : trends.filter(t => t.status === filter)
+
+  // Group by subject
+  const groups: { subjectId: string; subjectName: string; trends: Trend[] }[] = []
+  const seen = new Map<string, number>()
+  for (const t of filtered) {
+    const key = t.subject_id
+    if (!seen.has(key)) {
+      seen.set(key, groups.length)
+      groups.push({ subjectId: key, subjectName: t.subjects?.name ?? 'Unknown', trends: [] })
+    }
+    groups[seen.get(key)!].trends.push(t)
+  }
 
   const filters: { key: Filter; label: string; color: string }[] = [
     { key: 'all',       label: 'All',       color: '#9d5cf6' },
@@ -103,82 +116,108 @@ export default function TrendsFilter({ trends }: Props) {
         })}
       </div>
 
-      {/* Trend cards */}
+      {/* Trend cards grouped by subject */}
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: 14 }}>
           No {filter} trends right now.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {filtered.map(trend => {
-            const sc = statusStyle[trend.status] ?? statusStyle.emerging
-            const strength = (trend.strength_score * 10).toFixed(1)
-            const pct = Math.round(trend.strength_score * 100)
-
-            return (
-              <div key={trend.id} className="card" style={{
-                padding: '20px 24px', cursor: 'default',
-                transition: 'transform 0.15s, background 0.15s',
-              }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.background = 'var(--bg-card-hover)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.background = ''
-                }}
-              >
-                {/* Top row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                      background: platformColor[trend.source_platform] ?? '#7c3aed'
-                    }} />
-                    <span style={{ fontWeight: 700, fontSize: 16 }}>{trend.topic}</span>
-                  </div>
-                  <span className="mono" style={{
-                    fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
-                    background: sc.bg, color: sc.text, textTransform: 'uppercase', letterSpacing: '0.05em'
-                  }}>
-                    {trend.status}
-                  </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {groups.map(group => (
+            <div key={group.subjectId}>
+              {/* Subject header */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14,
+                paddingBottom: 10, borderBottom: '1px solid var(--border)'
+              }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                  background: 'linear-gradient(135deg, rgba(124,58,237,0.25), rgba(232,121,249,0.1))',
+                  border: '1px solid rgba(124,58,237,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 800, color: 'var(--accent-bright)'
+                }}>
+                  {group.subjectName.charAt(0).toUpperCase()}
                 </div>
-
-                {/* Subject */}
-                {trend.subjects?.name && (
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
-                    From: <span style={{ color: 'var(--text-secondary)' }}>{trend.subjects.name}</span>
-                  </div>
-                )}
-
-                {/* Detail */}
-                <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>
-                  {trend.detail}
-                </div>
-
-                {/* Bottom row: strength bar + detected */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{
-                    flex: 1, height: 4, borderRadius: 4,
-                    background: 'var(--border)', overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: `${pct}%`, height: '100%', borderRadius: 4,
-                      background: sc.text, transition: 'width 0.4s ease'
-                    }} />
-                  </div>
-                  <span className="mono" style={{ fontSize: 11, color: sc.text, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {strength}/10
-                  </span>
-                  <span className="mono" style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                    Detected {timeAgo(trend.first_detected_at)}
-                  </span>
-                </div>
+                <Link href={`/dashboard/subjects/${group.subjectId}`} style={{
+                  fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none'
+                }}>
+                  {group.subjectName}
+                </Link>
+                <span className="mono" style={{
+                  fontSize: 11, color: 'var(--text-muted)', marginLeft: 2
+                }}>
+                  {group.trends.length} trend{group.trends.length !== 1 ? 's' : ''}
+                </span>
               </div>
-            )
-          })}
+
+              {/* Cards for this subject */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {group.trends.map(trend => {
+                  const sc = statusStyle[trend.status] ?? statusStyle.emerging
+                  const strength = (trend.strength_score * 10).toFixed(1)
+                  const pct = Math.round(trend.strength_score * 100)
+
+                  return (
+                    <div key={trend.id} className="card" style={{
+                      padding: '18px 22px', cursor: 'default',
+                      transition: 'transform 0.15s, background 0.15s',
+                    }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.background = 'var(--bg-card-hover)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.background = ''
+                      }}
+                    >
+                      {/* Top row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{
+                            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                            background: platformColor[trend.source_platform] ?? '#7c3aed'
+                          }} />
+                          <span style={{ fontWeight: 700, fontSize: 15 }}>{trend.topic}</span>
+                        </div>
+                        <span className="mono" style={{
+                          fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+                          background: sc.bg, color: sc.text, textTransform: 'uppercase', letterSpacing: '0.05em'
+                        }}>
+                          {trend.status}
+                        </span>
+                      </div>
+
+                      {/* Detail */}
+                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 14 }}>
+                        {trend.detail}
+                      </div>
+
+                      {/* Strength bar */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{
+                          flex: 1, height: 4, borderRadius: 4,
+                          background: 'var(--border)', overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: `${pct}%`, height: '100%', borderRadius: 4,
+                            background: sc.text, transition: 'width 0.4s ease'
+                          }} />
+                        </div>
+                        <span className="mono" style={{ fontSize: 11, color: sc.text, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          {strength}/10
+                        </span>
+                        <span className="mono" style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {timeAgo(trend.first_detected_at)}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
