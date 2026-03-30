@@ -82,6 +82,8 @@ export default function OnboardingFlow({ userId }: { userId: string }) {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
+      // Ensure profile row exists (new users may not have one yet)
+      await supabase.from('profiles').upsert({ id: user.id, plan: 'free' }, { onConflict: 'id' })
       const { data, error } = await supabase
         .from('subjects')
         .insert({ name: nicheName.trim(), user_id: user.id })
