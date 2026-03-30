@@ -73,7 +73,7 @@ export default function ChannelSearch({ subjectId, onChannelAdded }: Props) {
         <input
           className="input"
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => { setQuery(e.target.value); if (!e.target.value) setResults([]) }}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           placeholder="Search YouTube channels..."
           style={{ flex: 1 }}

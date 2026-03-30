@@ -77,7 +77,7 @@ export default function TwitchChannelSearch({ subjectId, onChannelAdded }: Props
         <input
           className="input"
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => { setQuery(e.target.value); if (!e.target.value) setResults([]) }}
           onKeyDown={e => e.key === 'Enter' && handleSearch()}
           placeholder="Search Twitch channels..."
           style={{ flex: 1 }}

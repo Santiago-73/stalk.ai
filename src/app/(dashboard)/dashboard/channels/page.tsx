@@ -174,11 +174,27 @@ export default async function ChannelsPage() {
         ))}
       </div>
 
-      {/* Channels grid */}
-      <div className="channels-grid" style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16, marginBottom: 40
-      }}>
-        {channelList.map(ch => {
+      {/* Channels — split by platform */}
+      {(['youtube', 'twitch'] as const).filter(p => channelList.some(c => c.platform === p)).map(platform => {
+        const platformChannels = channelList.filter(c => c.platform === platform)
+        const color = platformColor[platform]
+        const label = platformLabel[platform]
+        return (
+          <div key={platform} style={{ marginBottom: 40 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+              paddingBottom: 10, borderBottom: '1px solid var(--border)'
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+              <span style={{ fontSize: 15, fontWeight: 700 }}>{label}</span>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                {platformChannels.length} channel{platformChannels.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="channels-grid" style={{
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16
+            }}>
+              {platformChannels.map(ch => {
           const color = platformColor[ch.platform] ?? '#7c3aed'
           const growth = ch.growth_rate_30d ?? 0
           const videoCount = videoCounts[ch.id] ?? 0
@@ -246,9 +262,12 @@ export default async function ChannelsPage() {
                 )}
               </div>
             </Link>
-          )
-        })}
-      </div>
+              )
+            })}
+            </div>
+          </div>
+        )
+      })}
 
       {/* Top Videos */}
       {topVideos.length > 0 && (
