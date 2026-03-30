@@ -57,37 +57,71 @@ export async function POST(req: NextRequest) {
     const channelName: string = twitchUser.display_name
     const avatarUrl: string | null = twitchUser.profile_image_url || null
 
-    // Upsert into channels table
-    const { data: channelRow, error: upsertError } = await supabase
+    // Check if channel already exists for this subject
+    const { data: existing } = await supabase
       .from('channels')
-      .upsert({
-        subject_id,
-        user_id: user.id,
-        platform: 'twitch',
-        platform_channel_id: channel_id,
-        name: channelName,
-        avatar_url: avatarUrl,
-        subscribers: followerCount,
-        avg_views_per_video: 0,
-        growth_rate_30d: 0,
-        last_synced_at: new Date().toISOString(),
-      }, { onConflict: 'subject_id,platform_channel_id' })
       .select('id')
+      .eq('subject_id', subject_id)
+      .eq('platform_channel_id', channel_id)
       .single()
 
-    if (upsertError) {
-      console.error('Twitch channel upsert error:', upsertError)
-      return NextResponse.json({ error: upsertError.message }, { status: 500 })
+    let channelRow: { id: string } | null = null
+
+    if (existing) {
+      // Update existing
+      const { data, error } = await supabase
+        .from('channels')
+        .update({
+          name: channelName,
+          avatar_url: avatarUrl,
+          subscribers: followerCount,
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+        .select('id')
+        .single()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      channelRow = data
+    } else {
+      // Insert new
+      const { data, error } = await supabase
+        .from('channels')
+        .insert({
+          subject_id,
+          user_id: user.id,
+          platform: 'twitch',
+          platform_channel_id: channel_id,
+          name: channelName,
+          avatar_url: avatarUrl,
+          subscribers: followerCount,
+          avg_views_per_video: 0,
+          growth_rate_30d: 0,
+          last_synced_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single()
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      channelRow = data
     }
 
-    // Also save to sources table
-    await supabase.from('sources').upsert({
-      subject_id,
-      user_id: user.id,
-      type: 'twitch',
-      name: channelName,
-      url: `https://www.twitch.tv/${twitchUser.login}`,
-    }, { onConflict: 'subject_id,url' })
+    // Also save to sources table (ignore if already exists)
+    const twitchUrl = `https://www.twitch.tv/${twitchUser.login}`
+    const { data: existingSource } = await supabase
+      .from('sources')
+      .select('id')
+      .eq('subject_id', subject_id)
+      .eq('url', twitchUrl)
+      .single()
+
+    if (!existingSource) {
+      await supabase.from('sources').insert({
+        subject_id,
+        user_id: user.id,
+        type: 'twitch',
+        name: channelName,
+        url: twitchUrl,
+      })
+    }
 
     return NextResponse.json({
       success: true,
