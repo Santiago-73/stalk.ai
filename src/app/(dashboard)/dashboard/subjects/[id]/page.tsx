@@ -281,7 +281,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     onChannelAdded={() => setChannelRefreshKey(k => k + 1)}
                 />
                 <div style={{ marginTop: 20 }}>
-                    <ChannelList subjectId={id} refreshKey={channelRefreshKey} />
+                    <ChannelList subjectId={id} refreshKey={channelRefreshKey} platform="youtube" />
                 </div>
             </div>
 
@@ -295,6 +295,9 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                         subjectId={id}
                         onChannelAdded={() => setChannelRefreshKey(k => k + 1)}
                     />
+                    <div style={{ marginTop: 20 }}>
+                        <ChannelList subjectId={id} refreshKey={channelRefreshKey} platform="twitch" />
+                    </div>
                 </div>
             ) : (
                 <div style={{ marginTop: 40 }}>

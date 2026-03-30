@@ -7,6 +7,7 @@ import { Users } from 'lucide-react'
 interface Props {
   subjectId: string
   refreshKey?: number
+  platform?: string
 }
 
 function fmt(n: number) {
@@ -31,17 +32,18 @@ const platformColor: Record<string, string> = {
   reddit: '#ff6314',
 }
 
-export default function ChannelList({ subjectId, refreshKey }: Props) {
+export default function ChannelList({ subjectId, refreshKey, platform }: Props) {
   const [channels, setChannels] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase
+    let q = supabase
       .from('channels')
       .select('id, name, platform, subscribers, avg_views_per_video, growth_rate_30d, avatar_url, last_synced_at')
       .eq('subject_id', subjectId)
-      .order('subscribers', { ascending: false })
+    if (platform) q = q.eq('platform', platform)
+    q.order('subscribers', { ascending: false })
       .then(({ data }) => {
         setChannels(data ?? [])
         setLoading(false)
