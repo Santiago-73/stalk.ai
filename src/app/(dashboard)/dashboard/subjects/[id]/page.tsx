@@ -14,6 +14,7 @@ import ChannelSearch from '@/app/(dashboard)/_components/ChannelSearch'
 import ChannelList from '@/app/(dashboard)/_components/ChannelList'
 import ChannelVideos from '@/app/(dashboard)/_components/ChannelVideos'
 import DetectTrendsButton from '@/app/(dashboard)/_components/DetectTrendsButton'
+import TwitchChannelSearch from '@/app/(dashboard)/_components/TwitchChannelSearch'
 
 type SourceType = 'youtube' | 'reddit' | 'twitch'
 
@@ -283,6 +284,46 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
                     <ChannelList subjectId={id} refreshKey={channelRefreshKey} />
                 </div>
             </div>
+
+            {/* Twitch Channels — Pro only */}
+            {(plan === 'pro' || plan === 'ultra') ? (
+                <div style={{ marginTop: 40 }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Twitch size={18} color="#9146ff" /> Twitch Channels
+                    </h2>
+                    <TwitchChannelSearch
+                        subjectId={id}
+                        onChannelAdded={() => setChannelRefreshKey(k => k + 1)}
+                    />
+                </div>
+            ) : (
+                <div style={{ marginTop: 40 }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Twitch size={18} color="#9146ff" style={{ opacity: 0.5 }} /> Twitch Channels
+                    </h2>
+                    <div style={{
+                        padding: '20px 24px', borderRadius: 12,
+                        background: 'rgba(145,70,255,0.06)', border: '1px solid rgba(145,70,255,0.2)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16
+                    }}>
+                        <div>
+                            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+                                Track Twitch streamers in your niche
+                            </div>
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                                Upgrade to Pro to add Twitch channels alongside YouTube.
+                            </div>
+                        </div>
+                        <a href="/#pricing" className="btn-primary" style={{
+                            fontSize: 13, padding: '8px 18px', whiteSpace: 'nowrap', flexShrink: 0,
+                            background: 'linear-gradient(135deg, #7c3aed, #9146ff)',
+                            textDecoration: 'none'
+                        }}>
+                            Upgrade →
+                        </a>
+                    </div>
+                </div>
+            )}
 
             {/* Recent Videos */}
             <div style={{ marginTop: 40 }}>
