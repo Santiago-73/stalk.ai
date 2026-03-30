@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Check, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface AddedChannel {
   id: string
@@ -78,13 +79,15 @@ export default function OnboardingFlow({ userId }: { userId: string }) {
     if (!nicheName.trim() || creating) return
     setCreating(true)
     try {
-      const res = await fetch('/api/subjects/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nicheName.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data, error } = await supabase
+        .from('subjects')
+        .insert({ name: nicheName.trim(), user_id: user.id })
+        .select('id, name')
+        .single()
+      if (error) throw new Error(error.message)
       setSubjectId(data.id)
       setSubjectName(data.name)
       goToStep(2)
@@ -119,7 +122,10 @@ export default function OnboardingFlow({ userId }: { userId: string }) {
       const res = await fetch('/api/youtube/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel_id: ch.platform_channel_id, subject_id: subjectId }),
+        body: JSON.stringify({
+          url: `https://www.youtube.com/channel/${ch.platform_channel_id}`,
+          subject_id: subjectId,
+        }),
       })
       const data = await res.json()
       setAddedChannels(prev => prev.map(c =>
