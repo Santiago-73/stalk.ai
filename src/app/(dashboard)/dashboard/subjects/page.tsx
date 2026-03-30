@@ -12,6 +12,7 @@ interface Subject {
     description: string
     created_at: string
     sources?: { count: number }[]
+    channels?: { count: number }[]
 }
 
 const PLAN_LIMITS: Record<string, number> = { free: 3, pro: 50, ultra: Infinity }
@@ -37,7 +38,7 @@ export default function SubjectsPage() {
 
         const { data } = await supabase
             .from('subjects')
-            .select('*, sources(count)')
+            .select('*, sources(count), channels(count)')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
 
@@ -134,7 +135,7 @@ export default function SubjectsPage() {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
                     {subjects.map(subject => {
-                        const sourceCount = subject.sources?.[0]?.count ?? 0
+                        const sourceCount = (subject.sources?.[0]?.count ?? 0) + (subject.channels?.[0]?.count ?? 0)
                         return (
                             <Link key={subject.id} href={`/dashboard/subjects/${subject.id}`} style={{ textDecoration: 'none' }}>
                                 <div
